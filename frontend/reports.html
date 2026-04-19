@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports - Airline MS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    .summary-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+    .summary-card { background:white; border:1px solid #e2e8f0; border-radius:10px; padding:18px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+    .summary-num { font-size:26px; font-weight:700; color:#1e293b; margin-bottom:6px; }
+    .summary-label { font-size:11px; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; }
+    .route-table { width:100%; border-collapse:collapse; }
+    .route-table th { background:#f8fafc; color:#94a3b8; font-size:11px; padding:10px 14px; text-align:left; text-transform:uppercase; letter-spacing:0.5px; }
+    .route-table td { color:#475569; font-size:13px; padding:11px 14px; border-top:1px solid #f1f5f9; }
+    .route-table tr:hover td { background:#f8fafc; }
+    .progress-bar { background:#f1f5f9; border-radius:4px; height:6px; margin-top:6px; overflow:hidden; }
+    .progress-fill { height:100%; background:#0ea5e9; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">✈️ AirLine MS</div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="flights.html">Flights</a></li>
+      <li><a href="passengers.html">Passengers</a></li>
+      <li><a href="bookings.html">Bookings</a></li>
+      <li><a href="search.html">Search</a></li>
+      <li><a href="reports.html" class="active">Reports</a></li>
+      <li><a href="ticket.html">Ticket</a></li>
+      <li><a href="calendar.html">Calendar</a></li>
+      <li><a href="tracking.html">Tracking</a></li>
+<li><a href="seatmap.html">Seat Map</a></li>
+<li><a href="history.html">History</a></li>
+    </ul>
+    <button class="bell-btn" onclick="NotificationSystem.togglePanel()">🔔<span class="bell-badge" id="bellBadge" style="display:none">0</span></button>
+  </nav>
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header"><h3>🔔 Notifications</h3><button class="clear-btn" onclick="NotificationSystem.clearAll()">Clear All</button></div>
+    <div id="notifList"></div>
+  </div>
+  <div class="container" style="margin-top:30px">
+    <div class="page-header">
+      <h1>📊 Reports & Analytics</h1>
+      <button class="btn btn-primary" onclick="loadReports()">🔄 Refresh</button>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card"><div class="summary-num" id="rFlights" style="color:#0ea5e9">-</div><div class="summary-label">Total Flights</div></div>
+      <div class="summary-card"><div class="summary-num" id="rPassengers" style="color:#16a34a">-</div><div class="summary-label">Total Passengers</div></div>
+      <div class="summary-card"><div class="summary-num" id="rBookings" style="color:#9333ea">-</div><div class="summary-label">Total Bookings</div></div>
+      <div class="summary-card"><div class="summary-num" id="rRevenue" style="color:#d97706">-</div><div class="summary-label">Total Revenue</div></div>
+    </div>
+    <div class="reports-grid">
+      <div class="chart-card"><h3>✈️ Flight Status</h3><canvas id="flightStatusChart"></canvas></div>
+      <div class="chart-card"><h3>💰 Revenue by Class</h3><canvas id="revenueChart"></canvas></div>
+      <div class="chart-card"><h3>🎫 Payment Status</h3><canvas id="paymentChart"></canvas></div>
+      <div class="chart-card"><h3>📈 Bookings per Flight</h3><canvas id="bookingsChart"></canvas></div>
+      <div class="chart-card full-width">
+        <h3>🗺️ Top Routes by Revenue</h3>
+        <table class="route-table">
+          <thead><tr><th>#</th><th>Route</th><th>Bookings</th><th>Revenue</th><th>Occupancy</th></tr></thead>
+          <tbody id="routeTableBody"><tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    Chart.defaults.color = '#94a3b8';
+    Chart.defaults.borderColor = '#e2e8f0';
+    const colors = { blue:'#0ea5e9', green:'#16a34a', amber:'#d97706', red:'#dc2626', purple:'#9333ea', teal:'#0d9488' };
+    let charts = {};
+
+    async function loadReports() {
+      const [flights, bookings, passengers] = await Promise.all([getFlights(), getBookings(), getPassengers()]);
+      document.getElementById('rFlights').textContent = flights.length;
+      document.getElementById('rPassengers').textContent = passengers.length;
+      document.getElementById('rBookings').textContent = bookings.length;
+      const rev = bookings.reduce((s,b) => s+b.fare, 0);
+      document.getElementById('rRevenue').textContent = 'Rs ' + rev.toLocaleString();
+      buildStatusChart(flights);
+      buildRevenueChart(bookings);
+      buildPaymentChart(bookings);
+      buildBookingsChart(flights, bookings);
+      buildRouteTable(flights, bookings);
+    }
+
+    function destroy(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+    function buildStatusChart(flights) {
+      destroy('s');
+      const c = { Scheduled:0, Delayed:0, Cancelled:0, Completed:0 };
+      flights.forEach(f => { if (c[f.status]!==undefined) c[f.status]++; });
+      charts['s'] = new Chart(document.getElementById('flightStatusChart'), {
+        type:'doughnut',
+        data:{ labels:Object.keys(c), datasets:[{ data:Object.values(c), backgroundColor:[colors.blue,colors.amber,colors.red,colors.green], borderWidth:2, borderColor:'#fff' }] },
+        options:{ plugins:{ legend:{ position:'bottom', labels:{ padding:16, font:{ size:12 } } } }, cutout:'65%' }
+      });
+    }
+
+    function buildRevenueChart(bookings) {
+      destroy('r');
+      const r = { Economy:0, Business:0, First:0 };
+      bookings.forEach(b => { if (r[b.seatClass]!==undefined) r[b.seatClass]+=b.fare; });
+      charts['r'] = new Chart(document.getElementById('revenueChart'), {
+        type:'bar',
+        data:{ labels:Object.keys(r), datasets:[{ label:'Revenue (Rs)', data:Object.values(r), backgroundColor:[colors.blue,colors.purple,colors.teal], borderRadius:6, borderWidth:0 }] },
+        options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{ color:'#f1f5f9' } }, x:{ grid:{ display:false } } } }
+      });
+    }
+
+    function buildPaymentChart(bookings) {
+      destroy('p');
+      const c = { Paid:0, Pending:0, Refunded:0 };
+      bookings.forEach(b => { if (c[b.paymentStatus]!==undefined) c[b.paymentStatus]++; });
+      charts['p'] = new Chart(document.getElementById('paymentChart'), {
+        type:'pie',
+        data:{ labels:Object.keys(c), datasets:[{ data:Object.values(c), backgroundColor:[colors.green,colors.amber,colors.purple], borderWidth:2, borderColor:'#fff' }] },
+        options:{ plugins:{ legend:{ position:'bottom', labels:{ padding:16, font:{ size:12 } } } } }
+      });
+    }
+
+    function buildBookingsChart(flights, bookings) {
+      destroy('b');
+      const fb = {};
+      flights.forEach(f => { fb[f.flightNumber]=0; });
+      bookings.forEach(b => { if (b.flight?.flightNumber) fb[b.flight.flightNumber]=(fb[b.flight.flightNumber]||0)+1; });
+      charts['b'] = new Chart(document.getElementById('bookingsChart'), {
+        type:'bar',
+        data:{ labels:Object.keys(fb), datasets:[{ label:'Bookings', data:Object.values(fb), backgroundColor:colors.teal, borderRadius:6, borderWidth:0 }] },
+        options:{ plugins:{ legend:{ display:false } }, scales:{ y:{ grid:{ color:'#f1f5f9' }, ticks:{ stepSize:1 } }, x:{ grid:{ display:false } } } }
+      });
+    }
+
+    function buildRouteTable(flights, bookings) {
+      const routes = {};
+      flights.forEach(f => { routes[`${f.origin} → ${f.destination}`]={ bookings:0, revenue:0, total:f.totalSeats, avail:f.availableSeats }; });
+      bookings.forEach(b => { if (b.flight) { const k=`${b.flight.origin} → ${b.flight.destination}`; if (routes[k]) { routes[k].bookings++; routes[k].revenue+=b.fare; } } });
+      const sorted = Object.entries(routes).sort((a,b)=>b[1].revenue-a[1].revenue);
+      const tbody = document.getElementById('routeTableBody');
+      tbody.innerHTML = '';
+      if (sorted.length===0) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:20px;">No data available.</td></tr>'; return; }
+      sorted.forEach(([route,d],i) => {
+        const occ = d.total>0 ? Math.round(((d.total-d.avail)/d.total)*100) : 0;
+        tbody.innerHTML+=`<tr>
+          <td style="color:#0ea5e9;font-weight:700;">${i+1}</td>
+          <td><b style="color:#1e293b">${route}</b></td>
+          <td>${d.bookings}</td>
+          <td style="color:#16a34a;font-weight:600;">Rs ${d.revenue.toLocaleString()}</td>
+          <td><div style="color:#475569">${occ}%</div><div class="progress-bar"><div class="progress-fill" style="width:${occ}%"></div></div></td>
+        </tr>`;
+      });
+    }
+
+    NotificationSystem.init();
+    loadReports();
+  </script>
+</body>
+</html>

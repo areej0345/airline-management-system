@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Print Ticket - Airline MS</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">✈️ AirLine MS</div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="flights.html">Flights</a></li>
+      <li><a href="passengers.html">Passengers</a></li>
+      <li><a href="bookings.html">Bookings</a></li>
+      <li><a href="search.html">Search</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="ticket.html" class="active">Ticket</a></li>
+      <li><a href="calendar.html">Calendar</a></li>
+      <li><a href="tracking.html">Tracking</a></li>
+<li><a href="seatmap.html">Seat Map</a></li>
+<li><a href="history.html">History</a></li>
+    </ul>
+    <button class="bell-btn" onclick="NotificationSystem.togglePanel()">🔔<span class="bell-badge" id="bellBadge" style="display:none">0</span></button>
+  </nav>
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header"><h3>🔔 Notifications</h3><button class="clear-btn" onclick="NotificationSystem.clearAll()">Clear All</button></div>
+    <div id="notifList"></div>
+  </div>
+  <div class="container" style="margin-top:30px">
+    <div class="page-header"><h1>🎫 Print Boarding Pass</h1></div>
+    <div class="ticket-search">
+      <div class="form-group">
+        <label>Search by Booking Reference or Passenger Name</label>
+        <input type="text" id="searchInput" placeholder="e.g. PK123456 or Ali Ahmed">
+      </div>
+      <button class="btn btn-primary" onclick="searchBooking()" style="white-space:nowrap">Search Booking</button>
+    </div>
+    <div class="alert" id="alert"></div>
+    <div id="bookingsList" style="margin-bottom:20px"></div>
+    <div class="ticket-wrapper">
+      <div class="ticket" id="ticketCard">
+        <div class="ticket-header">
+          <div><div class="ticket-brand">✈ AIRLINE MS</div><div class="ticket-type">Boarding Pass</div></div>
+          <div id="ticketStatus"></div>
+        </div>
+        <div class="ticket-body">
+          <div class="ticket-route">
+            <div class="ticket-city"><div class="ticket-city-code" id="originCode">KHI</div><div class="ticket-city-name" id="originName">Karachi</div></div>
+            <div class="ticket-arrow"><div class="ticket-arrow-line"></div><div class="ticket-flight-no" id="ticketFlightNo">PK-301</div></div>
+            <div class="ticket-city"><div class="ticket-city-code" id="destCode">LHE</div><div class="ticket-city-name" id="destName">Lahore</div></div>
+          </div>
+          <hr class="ticket-divider">
+          <div class="ticket-details">
+            <div><div class="ticket-detail-label">Passenger</div><div class="ticket-detail-value" id="ticketPassenger">-</div></div>
+            <div><div class="ticket-detail-label">Seat</div><div class="ticket-detail-value" id="ticketSeat">-</div></div>
+            <div><div class="ticket-detail-label">Class</div><div class="ticket-detail-value" id="ticketClass">-</div></div>
+            <div><div class="ticket-detail-label">Departure</div><div class="ticket-detail-value" id="ticketDeparture">-</div></div>
+            <div><div class="ticket-detail-label">Arrival</div><div class="ticket-detail-value" id="ticketArrival">-</div></div>
+            <div><div class="ticket-detail-label">Fare</div><div class="ticket-detail-value" id="ticketFare">-</div></div>
+            <div><div class="ticket-detail-label">Booking Date</div><div class="ticket-detail-value" id="ticketDate">-</div></div>
+            <div><div class="ticket-detail-label">Payment</div><div class="ticket-detail-value" id="ticketPayment">-</div></div>
+          </div>
+        </div>
+        <div class="ticket-footer">
+          <div><div class="ticket-ref">Booking Reference</div><div class="ticket-ref-num" id="ticketRef">-</div></div>
+          <div class="barcode" id="barcode"></div>
+        </div>
+      </div>
+    </div>
+    <div class="print-actions" id="printActions" style="display:none">
+      <button class="btn btn-primary" onclick="window.print()">🖨️ Print Boarding Pass</button>
+      <button class="btn" style="background:#f1f5f9;color:#64748b;" onclick="resetTicket()">← Search Another</button>
+    </div>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    let allBookings = [];
+    async function loadBookings() { allBookings = await getBookings(); }
+
+    function getCode(city) {
+      const codes = { 'karachi':'KHI','lahore':'LHE','islamabad':'ISB','peshawar':'PEW','quetta':'UET','multan':'MUX','faisalabad':'LYP','sialkot':'SKT' };
+      return codes[city.toLowerCase()] || city.substring(0,3).toUpperCase();
+    }
+
+    function generateBarcode() {
+      const b = document.getElementById('barcode');
+      b.innerHTML = '';
+      [20,30,25,35,20,40,25,30,20,35,25,40,30,20,35,25,30,20,40,25].forEach(h => {
+        const s = document.createElement('span');
+        s.style.height = h+'px';
+        b.appendChild(s);
+      });
+    }
+
+    async function searchBooking() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      if (!q) { showAlert('Please enter a booking reference or passenger name.','error'); return; }
+      const filtered = allBookings.filter(b => b.bookingReference?.toLowerCase().includes(q) || b.passenger?.name?.toLowerCase().includes(q));
+      document.getElementById('bookingsList').innerHTML = '';
+      if (filtered.length===0) { showAlert('No booking found.','error'); document.getElementById('ticketCard').classList.remove('visible'); document.getElementById('printActions').style.display='none'; return; }
+      if (filtered.length===1) { showTicket(filtered[0]); return; }
+      document.getElementById('bookingsList').innerHTML = `
+        <div class="table-section">
+          <h2>Select a Booking</h2>
+          <table><thead><tr><th>Ref</th><th>Passenger</th><th>Flight</th><th>Route</th><th>Action</th></tr></thead>
+          <tbody>${filtered.map(b=>`<tr>
+            <td><b>${b.bookingReference}</b></td>
+            <td>${b.passenger?.name||'N/A'}</td>
+            <td>${b.flight?.flightNumber||'N/A'}</td>
+            <td>${b.flight?b.flight.origin+' → '+b.flight.destination:'N/A'}</td>
+            <td><button class="btn btn-primary" onclick='showTicket(${JSON.stringify(b).replace(/'/g,"&#39;")})'>View</button></td>
+          </tr>`).join('')}</tbody></table></div>`;
+    }
+
+    function showTicket(b) {
+      document.getElementById('bookingsList').innerHTML='';
+      document.getElementById('alert').className='alert';
+      const f=b.flight, p=b.passenger;
+      document.getElementById('originCode').textContent=f?getCode(f.origin):'---';
+      document.getElementById('originName').textContent=f?f.origin:'-';
+      document.getElementById('destCode').textContent=f?getCode(f.destination):'---';
+      document.getElementById('destName').textContent=f?f.destination:'-';
+      document.getElementById('ticketFlightNo').textContent=f?f.flightNumber:'-';
+      document.getElementById('ticketPassenger').textContent=p?p.name:'-';
+      document.getElementById('ticketSeat').textContent=b.seatNumber||'-';
+      document.getElementById('ticketClass').textContent=b.seatClass||'-';
+      document.getElementById('ticketDeparture').textContent=f?new Date(f.departureTime).toLocaleString():'-';
+      document.getElementById('ticketArrival').textContent=f?new Date(f.arrivalTime).toLocaleString():'-';
+      document.getElementById('ticketFare').textContent='Rs '+b.fare.toLocaleString();
+      document.getElementById('ticketDate').textContent=new Date(b.bookingDate||b.createdAt).toLocaleDateString();
+      document.getElementById('ticketPayment').textContent=b.paymentStatus||'-';
+      document.getElementById('ticketRef').textContent=b.bookingReference||'-';
+      const isPaid=b.paymentStatus==='Paid';
+      document.getElementById('ticketStatus').innerHTML=`<div class="ticket-status ${isPaid?'status-paid':'status-pending'}">${b.paymentStatus}</div>`;
+      generateBarcode();
+      document.getElementById('ticketCard').classList.add('visible');
+      document.getElementById('printActions').style.display='flex';
+    }
+
+    function resetTicket() {
+      document.getElementById('ticketCard').classList.remove('visible');
+      document.getElementById('printActions').style.display='none';
+      document.getElementById('searchInput').value='';
+      document.getElementById('bookingsList').innerHTML='';
+    }
+
+    function showAlert(msg,type) {
+      const a=document.getElementById('alert');
+      a.textContent=msg; a.className=`alert ${type}`;
+      setTimeout(()=>{a.className='alert';},4000);
+    }
+
+    NotificationSystem.init();
+    loadBookings();
+  </script>
+</body>
+</html>

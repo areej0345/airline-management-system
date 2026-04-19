@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Passenger History - Airline MS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .passengers-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .passenger-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .passenger-card:hover { border-color: #0ea5e9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(14,165,233,0.12); }
+    .passenger-card.active { border-color: #0ea5e9; background: #f0f9ff; }
+
+    .pc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .pc-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e3a5f, #0ea5e9);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 16px;
+      flex-shrink: 0;
+    }
+    .pc-name { font-size: 15px; font-weight: 600; color: #1e293b; }
+    .pc-cnic { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .pc-stats { display: flex; gap: 10px; }
+    .pc-stat { flex: 1; background: #f8fafc; border-radius: 8px; padding: 8px; text-align: center; }
+    .pc-stat-num { font-size: 16px; font-weight: 700; color: #1e293b; }
+    .pc-stat-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
+
+    .history-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px;
+      display: none;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .history-panel.visible { display: block; }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .passenger-profile { display: flex; align-items: center; gap: 16px; }
+    .profile-avatar {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1e3a5f, #0ea5e9);
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 22px;
+    }
+    .profile-name { font-size: 20px; font-weight: 700; color: #1e293b; }
+    .profile-info { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .sum-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+    }
+    .sum-num { font-size: 22px; font-weight: 700; color: #1e293b; }
+    .sum-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+    .booking-history-list h3 {
+      color: #1e293b;
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .booking-history-item {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .booking-history-item:hover { border-color: #0ea5e9; background: #f0f9ff; }
+
+    .bhi-left { display: flex; align-items: center; gap: 16px; }
+    .bhi-icon {
+      width: 44px; height: 44px;
+      background: #dbeafe;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+
+    .bhi-ref { font-size: 15px; font-weight: 700; color: #1e293b; }
+    .bhi-route { font-size: 13px; color: #64748b; margin-top: 3px; }
+    .bhi-date { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+    .bhi-right { text-align: right; }
+    .bhi-fare { font-size: 16px; font-weight: 700; color: #0ea5e9; }
+    .bhi-seat { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+    .no-history { text-align: center; padding: 40px; color: #94a3b8; font-size: 14px; }
+
+    .search-passenger {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px 22px;
+      margin-bottom: 22px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .search-passenger .form-group { margin: 0; flex: 1; }
+
+    .freq-route {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+    }
+    .freq-route-name { color: #1e293b; font-weight: 600; }
+    .freq-route-count { color: #0ea5e9; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">✈️ AirLine MS</div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="flights.html">Flights</a></li>
+      <li><a href="passengers.html">Passengers</a></li>
+      <li><a href="bookings.html">Bookings</a></li>
+      <li><a href="search.html">Search</a></li>
+      <li><a href="tracking.html">Tracking</a></li>
+      <li><a href="seatmap.html">Seat Map</a></li>
+      <li><a href="history.html" class="active">History</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="ticket.html">Ticket</a></li>
+      <li><a href="calendar.html">Calendar</a></li>
+    </ul>
+    <button class="bell-btn" onclick="NotificationSystem.togglePanel()">
+      🔔 <span class="bell-badge" id="bellBadge" style="display:none">0</span>
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <h3>🔔 Notifications</h3>
+      <button class="clear-btn" onclick="NotificationSystem.clearAll()">Clear All</button>
+    </div>
+    <div id="notifList"></div>
+  </div>
+
+  <div class="container" style="margin-top:30px">
+    <div class="page-header">
+      <h1>📋 Passenger History</h1>
+    </div>
+
+    <!-- Search -->
+    <div class="search-passenger">
+      <div class="form-group">
+        <label>Search Passenger</label>
+        <input type="text" id="searchInput" placeholder="Search by name or CNIC..." oninput="filterPassengers()">
+      </div>
+    </div>
+
+    <!-- Passengers Grid -->
+    <div class="passengers-grid" id="passengersGrid">
+      <div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:30px;">Loading passengers...</div>
+    </div>
+
+    <!-- History Panel -->
+    <div class="history-panel" id="historyPanel">
+      <div class="history-header">
+        <div class="passenger-profile">
+          <div class="profile-avatar" id="profileAvatar">A</div>
+          <div>
+            <div class="profile-name" id="profileName">Passenger Name</div>
+            <div class="profile-info" id="profileInfo">Email | Phone</div>
+          </div>
+        </div>
+        <button class="btn" style="background:#f1f5f9;color:#64748b;" onclick="closeHistory()">✕ Close</button>
+      </div>
+
+      <div class="summary-cards">
+        <div class="sum-card"><div class="sum-num" id="hTotalFlights" style="color:#0ea5e9">0</div><div class="sum-label">Total Flights</div></div>
+        <div class="sum-card"><div class="sum-num" id="hTotalSpent" style="color:#16a34a">Rs 0</div><div class="sum-label">Total Spent</div></div>
+        <div class="sum-card"><div class="sum-num" id="hLastFlight" style="color:#9333ea">-</div><div class="sum-label">Last Flight</div></div>
+        <div class="sum-card"><div class="sum-num" id="hFavRoute" style="color:#d97706;font-size:14px">-</div><div class="sum-label">Fav Route</div></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px;">
+        <div>
+          <h3 style="color:#1e293b;font-size:14px;font-weight:600;margin-bottom:12px;">📍 Frequent Routes</h3>
+          <div id="freqRoutes"></div>
+        </div>
+        <div>
+          <h3 style="color:#1e293b;font-size:14px;font-weight:600;margin-bottom:12px;">📊 Booking Stats</h3>
+          <div id="bookingStats"></div>
+        </div>
+      </div>
+
+      <div class="booking-history-list">
+        <h3>✈️ All Bookings</h3>
+        <div id="bookingHistoryList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    let allPassengers = [];
+    let allBookings   = [];
+
+    async function loadData() {
+      allPassengers = await getPassengers();
+      allBookings   = await getBookings();
+      renderPassengers(allPassengers);
+    }
+
+    function getInitials(name) {
+      return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    }
+
+    function getPassengerBookings(passengerId) {
+      return allBookings.filter(b => {
+        const pid = b.passenger?._id || b.passenger;
+        return pid === passengerId;
+      });
+    }
+
+    function renderPassengers(passengers) {
+      const grid = document.getElementById('passengersGrid');
+      grid.innerHTML = '';
+
+      if (passengers.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:30px;">No passengers found.</div>';
+        return;
+      }
+
+      passengers.forEach(p => {
+        const bookings = getPassengerBookings(p._id);
+        const totalSpent = bookings.reduce((s, b) => s + b.fare, 0);
+
+        grid.innerHTML += `
+          <div class="passenger-card" onclick="showHistory('${p._id}')">
+            <div class="pc-header">
+              <div class="pc-avatar">${getInitials(p.name)}</div>
+              <div>
+                <div class="pc-name">${p.name}</div>
+                <div class="pc-cnic">${p.cnic}</div>
+              </div>
+            </div>
+            <div class="pc-stats">
+              <div class="pc-stat">
+                <div class="pc-stat-num" style="color:#0ea5e9">${bookings.length}</div>
+                <div class="pc-stat-label">Flights</div>
+              </div>
+              <div class="pc-stat">
+                <div class="pc-stat-num" style="color:#16a34a;font-size:13px">Rs ${totalSpent.toLocaleString()}</div>
+                <div class="pc-stat-label">Spent</div>
+              </div>
+            </div>
+          </div>`;
+      });
+    }
+
+    function filterPassengers() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allPassengers.filter(p =>
+        p.name.toLowerCase().includes(q) || p.cnic.toLowerCase().includes(q)
+      );
+      renderPassengers(filtered);
+    }
+
+    function showHistory(passengerId) {
+      const p = allPassengers.find(p => p._id === passengerId);
+      if (!p) return;
+
+      const bookings = getPassengerBookings(passengerId);
+      const totalSpent = bookings.reduce((s, b) => s + b.fare, 0);
+
+      // Highlight selected card
+      document.querySelectorAll('.passenger-card').forEach(c => c.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      // Profile
+      document.getElementById('profileAvatar').textContent = getInitials(p.name);
+      document.getElementById('profileName').textContent = p.name;
+      document.getElementById('profileInfo').textContent = `${p.email} | ${p.phone} | ${p.nationality}`;
+
+      // Summary
+      document.getElementById('hTotalFlights').textContent = bookings.length;
+      document.getElementById('hTotalSpent').textContent = 'Rs ' + totalSpent.toLocaleString();
+
+      const lastBooking = bookings[bookings.length - 1];
+      document.getElementById('hLastFlight').textContent = lastBooking?.flight?.flightNumber || '-';
+
+      // Frequent routes
+      const routes = {};
+      bookings.forEach(b => {
+        if (b.flight) {
+          const route = `${b.flight.origin} → ${b.flight.destination}`;
+          routes[route] = (routes[route] || 0) + 1;
+        }
+      });
+
+      const sortedRoutes = Object.entries(routes).sort((a, b) => b[1] - a[1]);
+      document.getElementById('hFavRoute').textContent = sortedRoutes[0]?.[0] || '-';
+
+      const freqDiv = document.getElementById('freqRoutes');
+      freqDiv.innerHTML = sortedRoutes.length === 0
+        ? '<div style="color:#94a3b8;font-size:13px;">No routes yet.</div>'
+        : sortedRoutes.slice(0, 5).map(([route, count]) => `
+            <div class="freq-route">
+              <span class="freq-route-name">${route}</span>
+              <span class="freq-route-count">${count}x</span>
+            </div>`).join('');
+
+      // Stats
+      const paid    = bookings.filter(b => b.paymentStatus === 'Paid').length;
+      const pending = bookings.filter(b => b.paymentStatus === 'Pending').length;
+      const economy = bookings.filter(b => b.seatClass === 'Economy').length;
+      const business= bookings.filter(b => b.seatClass === 'Business').length;
+      const first   = bookings.filter(b => b.seatClass === 'First').length;
+
+      document.getElementById('bookingStats').innerHTML = `
+        <div class="freq-route" style="background:#dcfce7;border-color:#bbf7d0;">
+          <span style="color:#16a34a;font-weight:600;">Paid Bookings</span>
+          <span style="color:#16a34a;font-weight:700;">${paid}</span>
+        </div>
+        <div class="freq-route" style="background:#fef3c7;border-color:#fde68a;">
+          <span style="color:#d97706;font-weight:600;">Pending Payments</span>
+          <span style="color:#d97706;font-weight:700;">${pending}</span>
+        </div>
+        <div class="freq-route">
+          <span style="color:#1e293b;font-weight:600;">Economy Class</span>
+          <span style="color:#0ea5e9;font-weight:700;">${economy}</span>
+        </div>
+        <div class="freq-route">
+          <span style="color:#1e293b;font-weight:600;">Business Class</span>
+          <span style="color:#9333ea;font-weight:700;">${business}</span>
+        </div>
+        <div class="freq-route">
+          <span style="color:#1e293b;font-weight:600;">First Class</span>
+          <span style="color:#d97706;font-weight:700;">${first}</span>
+        </div>`;
+
+      // Booking list
+      const listDiv = document.getElementById('bookingHistoryList');
+      if (bookings.length === 0) {
+        listDiv.innerHTML = '<div class="no-history">No booking history found for this passenger.</div>';
+      } else {
+        listDiv.innerHTML = bookings.map(b => `
+          <div class="booking-history-item">
+            <div class="bhi-left">
+              <div class="bhi-icon">✈️</div>
+              <div>
+                <div class="bhi-ref">${b.bookingReference}</div>
+                <div class="bhi-route">${b.flight ? b.flight.origin + ' → ' + b.flight.destination : 'N/A'} &nbsp;|&nbsp; Flight: ${b.flight?.flightNumber || 'N/A'}</div>
+                <div class="bhi-date">${new Date(b.bookingDate || b.createdAt).toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' })}</div>
+              </div>
+            </div>
+            <div class="bhi-right">
+              <div class="bhi-fare">Rs ${b.fare.toLocaleString()}</div>
+              <div class="bhi-seat">Seat: ${b.seatNumber} | ${b.seatClass}</div>
+              <span class="badge ${b.paymentStatus.toLowerCase()}" style="margin-top:6px;display:inline-block;">${b.paymentStatus}</span>
+            </div>
+          </div>`).join('');
+      }
+
+      document.getElementById('historyPanel').classList.add('visible');
+      document.getElementById('historyPanel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closeHistory() {
+      document.getElementById('historyPanel').classList.remove('visible');
+      document.querySelectorAll('.passenger-card').forEach(c => c.classList.remove('active'));
+    }
+
+    NotificationSystem.init();
+    loadData();
+  </script>
+</body>
+</html>

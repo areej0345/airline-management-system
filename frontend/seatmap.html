@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seat Map - Airline MS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .flight-selector {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .flight-selector .form-group { margin: 0; flex: 1; }
+
+    .seat-map-container {
+      display: none;
+      gap: 24px;
+    }
+    .seat-map-container.visible { display: grid; grid-template-columns: 1fr 320px; }
+
+    .aircraft-wrapper {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .aircraft-header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .aircraft-header h3 { color: #1e293b; font-size: 16px; font-weight: 600; }
+    .aircraft-header p { color: #64748b; font-size: 13px; margin-top: 4px; }
+
+    .legend {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #64748b; }
+    .legend-box { width: 20px; height: 20px; border-radius: 4px; }
+
+    .aircraft-body {
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .aircraft-body::-webkit-scrollbar { width: 4px; }
+    .aircraft-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+    .aircraft-nose {
+      text-align: center;
+      font-size: 40px;
+      margin-bottom: 10px;
+    }
+
+    .row-labels {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .col-label { width: 36px; text-align: center; font-size: 11px; font-weight: 600; color: #94a3b8; }
+    .col-gap { width: 20px; }
+
+    .seat-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .row-num { width: 20px; text-align: center; font-size: 11px; color: #94a3b8; }
+
+    .seat {
+      width: 36px;
+      height: 36px;
+      border-radius: 6px 6px 4px 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .seat.available {
+      background: #dbeafe;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+    .seat.available:hover {
+      background: #0ea5e9;
+      color: white;
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(14,165,233,0.3);
+    }
+
+    .seat.booked {
+      background: #fee2e2;
+      color: #dc2626;
+      border-color: #fecaca;
+      cursor: not-allowed;
+    }
+
+    .seat.selected {
+      background: #16a34a;
+      color: white;
+      border-color: #15803d;
+      transform: scale(1.1);
+      box-shadow: 0 2px 8px rgba(22,163,74,0.3);
+    }
+
+    .seat.first-class {
+      background: #fef3c7;
+      color: #d97706;
+      border-color: #fde68a;
+    }
+    .seat.first-class:hover {
+      background: #d97706;
+      color: white;
+    }
+
+    .seat.business {
+      background: #f3e8ff;
+      color: #9333ea;
+      border-color: #e9d5ff;
+    }
+    .seat.business:hover {
+      background: #9333ea;
+      color: white;
+    }
+
+    .seat.first-class.booked,
+    .seat.business.booked {
+      background: #fee2e2;
+      color: #dc2626;
+      border-color: #fecaca;
+    }
+
+    .aisle { width: 20px; }
+
+    .class-divider {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin: 12px 0 8px;
+      padding: 6px;
+      background: #f1f5f9;
+      border-radius: 6px;
+    }
+
+    /* Booking Panel */
+    .booking-panel {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      height: fit-content;
+      position: sticky;
+      top: 80px;
+    }
+
+    .booking-panel h3 { color: #1e293b; font-size: 16px; font-weight: 600; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0; }
+
+    .flight-info-box {
+      background: #f0f9ff;
+      border: 1px solid #bae6fd;
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+
+    .fi-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+    .fi-label { color: #64748b; }
+    .fi-value { font-weight: 600; color: #1e293b; }
+
+    .selected-seat-display {
+      background: #f0fdf4;
+      border: 2px dashed #16a34a;
+      border-radius: 10px;
+      padding: 16px;
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .selected-seat-num { font-size: 32px; font-weight: 700; color: #16a34a; }
+    .selected-seat-class { font-size: 13px; color: #64748b; margin-top: 4px; }
+
+    .seat-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .stat-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; text-align: center; }
+    .stat-box-num { font-size: 18px; font-weight: 700; color: #1e293b; }
+    .stat-box-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">✈️ AirLine MS</div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="flights.html">Flights</a></li>
+      <li><a href="passengers.html">Passengers</a></li>
+      <li><a href="bookings.html">Bookings</a></li>
+      <li><a href="search.html">Search</a></li>
+      <li><a href="tracking.html">Tracking</a></li>
+      <li><a href="seatmap.html" class="active">Seat Map</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="ticket.html">Ticket</a></li>
+      <li><a href="calendar.html">Calendar</a></li>
+    </ul>
+    <button class="bell-btn" onclick="NotificationSystem.togglePanel()">
+      🔔 <span class="bell-badge" id="bellBadge" style="display:none">0</span>
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <h3>🔔 Notifications</h3>
+      <button class="clear-btn" onclick="NotificationSystem.clearAll()">Clear All</button>
+    </div>
+    <div id="notifList"></div>
+  </div>
+
+  <div class="container" style="margin-top:30px">
+    <div class="page-header">
+      <h1>💺 Seat Map</h1>
+    </div>
+
+    <div class="flight-selector">
+      <div class="form-group">
+        <label>Select Flight</label>
+        <select id="flightSelect" onchange="loadSeatMap()">
+          <option value="">-- Select a Flight --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Select Passenger</label>
+        <select id="passengerSelect">
+          <option value="">-- Select Passenger --</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <div class="seat-map-container" id="seatMapContainer">
+      <!-- Aircraft -->
+      <div class="aircraft-wrapper">
+        <div class="aircraft-header">
+          <h3 id="mapFlightTitle">Flight Seat Map</h3>
+          <p id="mapFlightRoute">Select a flight to view seat map</p>
+        </div>
+
+        <div class="legend">
+          <div class="legend-item"><div class="legend-box" style="background:#fef3c7;border:1px solid #fde68a"></div>First Class</div>
+          <div class="legend-item"><div class="legend-box" style="background:#f3e8ff;border:1px solid #e9d5ff"></div>Business</div>
+          <div class="legend-item"><div class="legend-box" style="background:#dbeafe;border:1px solid #bfdbfe"></div>Economy</div>
+          <div class="legend-item"><div class="legend-box" style="background:#fee2e2;border:1px solid #fecaca"></div>Booked</div>
+          <div class="legend-item"><div class="legend-box" style="background:#16a34a"></div>Selected</div>
+        </div>
+
+        <div class="aircraft-body" id="aircraftBody">
+          <div style="text-align:center;color:#94a3b8;padding:40px;">Select a flight to view seats</div>
+        </div>
+      </div>
+
+      <!-- Booking Panel -->
+      <div class="booking-panel">
+        <h3>🎫 Book Selected Seat</h3>
+
+        <div class="flight-info-box" id="flightInfoBox">
+          <div class="fi-row"><span class="fi-label">Flight</span><span class="fi-value" id="bFlightNo">-</span></div>
+          <div class="fi-row"><span class="fi-label">Route</span><span class="fi-value" id="bRoute">-</span></div>
+          <div class="fi-row"><span class="fi-label">Departure</span><span class="fi-value" id="bDep">-</span></div>
+          <div class="fi-row"><span class="fi-label">Base Fare</span><span class="fi-value" id="bFare" style="color:#0ea5e9">-</span></div>
+        </div>
+
+        <div class="seat-stats">
+          <div class="stat-box"><div class="stat-box-num" id="sTotalSeats">-</div><div class="stat-box-label">Total</div></div>
+          <div class="stat-box"><div class="stat-box-num" id="sAvailSeats" style="color:#16a34a">-</div><div class="stat-box-label">Available</div></div>
+          <div class="stat-box"><div class="stat-box-num" id="sBookedSeats" style="color:#dc2626">-</div><div class="stat-box-label">Booked</div></div>
+        </div>
+
+        <div class="selected-seat-display" id="selectedSeatDisplay">
+          <div style="color:#94a3b8;font-size:13px;">Click on a seat to select</div>
+        </div>
+
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select id="paymentStatus">
+            <option>Pending</option>
+            <option>Paid</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary" style="width:100%" onclick="bookSelectedSeat()" id="bookBtn" disabled>
+          Book This Seat
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    let selectedSeat = null;
+    let currentFlight = null;
+    let bookedSeats = [];
+
+    async function init() {
+      const flights = await getFlights();
+      const passengers = await getPassengers();
+      const bookings = await getBookings();
+
+      // Build booked seats list
+      bookedSeats = bookings.map(b => ({ seat: b.seatNumber, flightId: b.flight?._id || b.flight }));
+
+      const fs = document.getElementById('flightSelect');
+      flights.forEach(f => {
+        fs.innerHTML += `<option value="${f._id}" data-flight='${JSON.stringify(f)}'>${f.flightNumber} — ${f.origin} to ${f.destination} (${f.availableSeats} seats)</option>`;
+      });
+
+      const ps = document.getElementById('passengerSelect');
+      passengers.forEach(p => {
+        ps.innerHTML += `<option value="${p._id}">${p.name} — ${p.cnic}</option>`;
+      });
+    }
+
+    function loadSeatMap() {
+      const sel = document.getElementById('flightSelect');
+      if (!sel.value) return;
+
+      const flightData = JSON.parse(sel.options[sel.selectedIndex].dataset.flight);
+      currentFlight = flightData;
+      selectedSeat = null;
+
+      document.getElementById('seatMapContainer').classList.add('visible');
+      document.getElementById('mapFlightTitle').textContent = `Flight ${flightData.flightNumber} — Seat Map`;
+      document.getElementById('mapFlightRoute').textContent = `${flightData.origin} → ${flightData.destination}`;
+      document.getElementById('bFlightNo').textContent = flightData.flightNumber;
+      document.getElementById('bRoute').textContent = `${flightData.origin} → ${flightData.destination}`;
+      document.getElementById('bDep').textContent = new Date(flightData.departureTime).toLocaleString();
+      document.getElementById('bFare').textContent = `Rs ${flightData.fare.toLocaleString()}`;
+      document.getElementById('sTotalSeats').textContent = flightData.totalSeats;
+      document.getElementById('sAvailSeats').textContent = flightData.availableSeats;
+      document.getElementById('sBookedSeats').textContent = flightData.totalSeats - flightData.availableSeats;
+
+      renderSeats(flightData);
+    }
+
+    function renderSeats(f) {
+      const body = document.getElementById('aircraftBody');
+      const total = f.totalSeats;
+      const flightBookedSeats = bookedSeats.filter(b => b.flightId === f._id).map(b => b.seat);
+
+      // Calculate class distribution
+      const firstClassRows = Math.max(1, Math.floor(total * 0.1 / 4));
+      const businessRows   = Math.max(2, Math.floor(total * 0.2 / 4));
+      const totalRows      = Math.ceil(total / 4);
+      const econRows       = totalRows - firstClassRows - businessRows;
+
+      const cols = ['A', 'B', 'C', 'D'];
+      let html = '<div class="aircraft-nose">✈️</div>';
+
+      // Col labels
+      html += `<div class="row-labels">
+        <div class="col-gap"></div>
+        <div class="col-label">A</div><div class="col-label">B</div>
+        <div class="aisle"></div>
+        <div class="col-label">C</div><div class="col-label">D</div>
+        <div class="col-gap"></div>
+      </div>`;
+
+      let rowNum = 1;
+
+      // First Class
+      html += `<div class="class-divider">⭐ First Class</div>`;
+      for (let r = 0; r < firstClassRows; r++, rowNum++) {
+        html += renderRow(rowNum, cols, 'first-class', flightBookedSeats);
+      }
+
+      // Business
+      html += `<div class="class-divider">💼 Business Class</div>`;
+      for (let r = 0; r < businessRows; r++, rowNum++) {
+        html += renderRow(rowNum, cols, 'business', flightBookedSeats);
+      }
+
+      // Economy
+      html += `<div class="class-divider">🪑 Economy Class</div>`;
+      for (let r = 0; r < econRows; r++, rowNum++) {
+        html += renderRow(rowNum, cols, 'available', flightBookedSeats);
+      }
+
+      body.innerHTML = html;
+    }
+
+    function renderRow(rowNum, cols, seatClass, bookedList) {
+      let html = `<div class="seat-row"><div class="row-num">${rowNum}</div>`;
+      cols.forEach((col, i) => {
+        if (i === 2) html += `<div class="aisle"></div>`;
+        const seatId = `${rowNum}${col}`;
+        const isBooked = bookedList.includes(seatId);
+        const cls = isBooked ? `seat ${seatClass} booked` : `seat ${seatClass}`;
+        html += `<div class="${cls}" id="seat-${seatId}" onclick="${!isBooked ? `selectSeat('${seatId}','${seatClass}')` : ''}" title="${seatId}">${seatId}</div>`;
+      });
+      html += `<div class="row-num"></div></div>`;
+      return html;
+    }
+
+    function selectSeat(seatId, seatClass) {
+      // Deselect previous
+      if (selectedSeat) {
+        const prev = document.getElementById(`seat-${selectedSeat.id}`);
+        if (prev) {
+          prev.classList.remove('selected');
+          prev.classList.add(selectedSeat.class);
+        }
+      }
+
+      // Select new
+      const el = document.getElementById(`seat-${seatId}`);
+      el.classList.remove(seatClass);
+      el.classList.add('selected');
+
+      selectedSeat = { id: seatId, class: seatClass };
+
+      // Get class name
+      const classNames = { 'first-class': 'First Class', 'business': 'Business Class', 'available': 'Economy' };
+      const className = classNames[seatClass] || 'Economy';
+
+      // Update panel
+      const fareMultiplier = seatClass === 'first-class' ? 2.5 : seatClass === 'business' ? 1.8 : 1;
+      const seatFare = Math.round(currentFlight.fare * fareMultiplier);
+
+      document.getElementById('selectedSeatDisplay').innerHTML = `
+        <div class="selected-seat-num">${seatId}</div>
+        <div class="selected-seat-class">${className}</div>
+        <div style="font-size:14px;font-weight:700;color:#0ea5e9;margin-top:8px;">Rs ${seatFare.toLocaleString()}</div>`;
+
+      document.getElementById('bookBtn').disabled = false;
+      document.getElementById('bookBtn').textContent = `Book Seat ${seatId}`;
+    }
+
+    async function bookSelectedSeat() {
+      if (!selectedSeat || !currentFlight) return;
+
+      const passengerId = document.getElementById('passengerSelect').value;
+      if (!passengerId) { showAlert('Please select a passenger.', 'error'); return; }
+
+      const fareMultiplier = selectedSeat.class === 'first-class' ? 2.5 : selectedSeat.class === 'business' ? 1.8 : 1;
+      const seatFare = Math.round(currentFlight.fare * fareMultiplier);
+
+      const classNames = { 'first-class': 'First', 'business': 'Business', 'available': 'Economy' };
+
+      const data = {
+        flight: currentFlight._id,
+        passenger: passengerId,
+        seatNumber: selectedSeat.id,
+        seatClass: classNames[selectedSeat.class] || 'Economy',
+        fare: seatFare,
+        paymentStatus: document.getElementById('paymentStatus').value
+      };
+
+      const result = await addBooking(data);
+
+      if (result._id) {
+        showAlert(`Seat ${selectedSeat.id} booked successfully! Ref: ${result.bookingReference}`, 'success');
+        notifyBooking(result.bookingReference, `${currentFlight.flightNumber} - Seat ${selectedSeat.id}`);
+
+        // Mark seat as booked
+        const el = document.getElementById(`seat-${selectedSeat.id}`);
+        if (el) { el.classList.remove('selected'); el.classList.add('booked'); el.onclick = null; }
+        bookedSeats.push({ seat: selectedSeat.id, flightId: currentFlight._id });
+        selectedSeat = null;
+        document.getElementById('bookBtn').disabled = true;
+        document.getElementById('selectedSeatDisplay').innerHTML = '<div style="color:#94a3b8;font-size:13px;">Click on a seat to select</div>';
+
+        // Update counts
+        currentFlight.availableSeats--;
+        currentFlight.totalSeats - currentFlight.availableSeats;
+        document.getElementById('sAvailSeats').textContent = currentFlight.availableSeats;
+        document.getElementById('sBookedSeats').textContent = currentFlight.totalSeats - currentFlight.availableSeats;
+      } else {
+        showAlert(result.message || 'Error booking seat.', 'error');
+      }
+    }
+
+    function showAlert(msg, type) {
+      const a = document.getElementById('alert');
+      a.textContent = msg;
+      a.className = `alert ${type}`;
+      setTimeout(() => { a.className = 'alert'; }, 4000);
+    }
+
+    NotificationSystem.init();
+    init();
+  </script>
+</body>
+</html>

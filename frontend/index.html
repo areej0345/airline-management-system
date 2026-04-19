@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Airline MS</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">✈️ AirLine MS</div>
+    <ul class="nav-links">
+      <li><a href="index.html" class="active">Dashboard</a></li>
+      <li><a href="flights.html">Flights</a></li>
+      <li><a href="passengers.html">Passengers</a></li>
+      <li><a href="bookings.html">Bookings</a></li>
+      <li><a href="search.html">Search</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="ticket.html">Ticket</a></li>
+      <li><a href="calendar.html">Calendar</a></li>
+      <li><a href="tracking.html">Tracking</a></li>
+<li><a href="seatmap.html">Seat Map</a></li>
+<li><a href="history.html">History</a></li>
+    </ul>
+    <button class="bell-btn" onclick="NotificationSystem.togglePanel()">🔔<span class="bell-badge" id="bellBadge" style="display:none">0</span></button>
+  </nav>
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header"><h3>🔔 Notifications</h3><button class="clear-btn" onclick="NotificationSystem.clearAll()">Clear All</button></div>
+    <div id="notifList"></div>
+  </div>
+  <div class="hero">
+    <h1>Welcome to Airline Management System</h1>
+    <p>Manage Flights, Passengers and Bookings with ease</p>
+  </div>
+  <div class="container">
+    <div class="stats-grid">
+      <div class="card"><div class="card-icon">✈️</div><div class="card-info"><h3 id="totalFlights">0</h3><p>Total Flights</p></div></div>
+      <div class="card"><div class="card-icon">👤</div><div class="card-info"><h3 id="totalPassengers">0</h3><p>Total Passengers</p></div></div>
+      <div class="card"><div class="card-icon">🎫</div><div class="card-info"><h3 id="totalBookings">0</h3><p>Total Bookings</p></div></div>
+      <div class="card"><div class="card-icon">💰</div><div class="card-info"><h3 id="totalRevenue">0</h3><p>Total Revenue</p></div></div>
+    </div>
+    <div class="table-section">
+      <h2>Recent Flights</h2>
+      <table>
+        <thead><tr><th>Flight No</th><th>Origin</th><th>Destination</th><th>Departure</th><th>Available Seats</th><th>Fare</th><th>Status</th></tr></thead>
+        <tbody id="flightsTable"><tr><td colspan="7">Loading flights...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <script src="js/api.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    async function loadDashboard() {
+      try {
+        const flights = await getFlights();
+        document.getElementById('totalFlights').textContent = flights.length;
+        const passengers = await getPassengers();
+        document.getElementById('totalPassengers').textContent = passengers.length;
+        const bookings = await getBookings();
+        document.getElementById('totalBookings').textContent = bookings.length;
+        const revenue = bookings.reduce((sum, b) => sum + b.fare, 0);
+        document.getElementById('totalRevenue').textContent = 'Rs ' + revenue.toLocaleString();
+        const tbody = document.getElementById('flightsTable');
+        tbody.innerHTML = '';
+        if (flights.length === 0) { tbody.innerHTML = '<tr><td colspan="7">No flights available.</td></tr>'; }
+        else {
+          flights.forEach(f => {
+            if (f.availableSeats <= 10 && f.availableSeats > 0) notifySeatsLow(f.flightNumber, f.availableSeats);
+            tbody.innerHTML += `<tr>
+              <td><b style="color:#1e293b">${f.flightNumber}</b></td><td>${f.origin}</td><td>${f.destination}</td>
+              <td>${new Date(f.departureTime).toLocaleString()}</td>
+              <td>${f.availableSeats} / ${f.totalSeats}</td>
+              <td>Rs ${f.fare.toLocaleString()}</td>
+              <td><span class="badge ${f.status.toLowerCase()}">${f.status}</span></td>
+            </tr>`;
+          });
+        }
+      } catch (err) { console.error('Dashboard error:', err); }
+    }
+    NotificationSystem.init(); loadDashboard();
+  </script>
+</body>
+</html>

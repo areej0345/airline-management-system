@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Airline MS</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#f0f4f8; min-height:100vh; display:flex; align-items:center; justify-content:center; }
+    .login-wrapper { display:flex; width:900px; min-height:520px; border-radius:20px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 20px 60px rgba(0,0,0,0.1); }
+    .login-left { flex:1; background:linear-gradient(135deg,#1e3a5f,#0ea5e9); padding:60px 50px; display:flex; flex-direction:column; justify-content:center; }
+    .brand { color:white; font-size:22px; font-weight:700; letter-spacing:3px; text-transform:uppercase; margin-bottom:8px; }
+    .brand-sub { color:rgba(255,255,255,0.7); font-size:13px; letter-spacing:1px; margin-bottom:40px; }
+    .login-left h2 { color:white; font-size:24px; font-weight:700; margin-bottom:10px; }
+    .login-left p { color:rgba(255,255,255,0.8); font-size:14px; margin-bottom:30px; line-height:1.6; }
+    .feature { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .feature-icon { width:36px; height:36px; background:rgba(255,255,255,0.2); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+    .feature-text { color:rgba(255,255,255,0.9); font-size:13px; }
+    .login-right { flex:1; background:#ffffff; padding:60px 50px; display:flex; flex-direction:column; justify-content:center; }
+    .login-right h2 { color:#1e293b; font-size:22px; font-weight:700; margin-bottom:6px; }
+    .login-right p { color:#64748b; font-size:13px; margin-bottom:30px; }
+    .form-group { margin-bottom:16px; }
+    .form-group label { display:block; color:#64748b; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:7px; }
+    .form-group input { width:100%; padding:11px 14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; color:#1e293b; font-size:14px; transition:all 0.2s; }
+    .form-group input:focus { outline:none; border-color:#0ea5e9; background:white; box-shadow:0 0 0 3px rgba(14,165,233,0.1); }
+    .form-group input::placeholder { color:#cbd5e1; }
+    .login-btn { width:100%; padding:13px; background:linear-gradient(135deg,#1e3a5f,#0ea5e9); color:white; border:none; border-radius:8px; font-size:14px; font-weight:700; cursor:pointer; letter-spacing:1px; transition:all 0.3s; margin-top:8px; }
+    .login-btn:hover { opacity:0.9; transform:translateY(-1px); box-shadow:0 4px 15px rgba(14,165,233,0.3); }
+    .alert { padding:12px 16px; border-radius:8px; font-size:13px; margin-bottom:16px; display:none; border-left:3px solid; }
+    .alert.error { background:#fee2e2; color:#dc2626; border-color:#dc2626; display:block; }
+    .alert.success { background:#dcfce7; color:#16a34a; border-color:#16a34a; display:block; }
+    .info-box { background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:14px 16px; margin-top:20px; }
+    .info-title { color:#0369a1; font-size:11px; font-weight:600; letter-spacing:0.5px; text-transform:uppercase; margin-bottom:10px; }
+    .info-item { display:flex; justify-content:space-between; margin-bottom:6px; font-size:12px; }
+    .info-role { color:#0369a1; font-weight:600; }
+    .info-creds { color:#64748b; font-family:monospace; }
+  </style>
+</head>
+<body>
+<div class="login-wrapper">
+  <div class="login-left">
+    <div class="brand">✈ AirLine MS</div>
+    <div class="brand-sub">Pakistan Domestic Airlines</div>
+    <h2>Welcome Back!</h2>
+    <p>Your professional platform for managing domestic flights across Pakistan.</p>
+    <div class="feature"><div class="feature-icon">✈️</div><div class="feature-text">Manage all domestic flights</div></div>
+    <div class="feature"><div class="feature-icon">👤</div><div class="feature-text">Complete passenger management</div></div>
+    <div class="feature"><div class="feature-icon">🎫</div><div class="feature-text">Instant booking & ticket generation</div></div>
+    <div class="feature"><div class="feature-icon">📊</div><div class="feature-text">Advanced reports & analytics</div></div>
+    <div class="feature"><div class="feature-icon">📧</div><div class="feature-text">Auto Email & SMS notifications</div></div>
+  </div>
+  <div class="login-right">
+    <h2>Sign In</h2>
+    <p>Enter your credentials to access the system</p>
+    <div class="alert" id="alert"></div>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="username" placeholder="Enter your username">
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password">
+    </div>
+    <button class="login-btn" onclick="handleLogin()">Sign In →</button>
+    <div class="info-box">
+      <div class="info-title">Demo Accounts</div>
+      <div class="info-item"><span class="info-role">👑 Admin</span><span class="info-creds" onclick="fillDemo('admin','admin123')" style="cursor:pointer;color:#0ea5e9">admin / admin123</span></div>
+      <div class="info-item"><span class="info-role">🎫 Agent</span><span class="info-creds" onclick="fillDemo('agent','agent123')" style="cursor:pointer;color:#0ea5e9">agent / agent123</span></div>
+      <div class="info-item"><span class="info-role">👁️ Viewer</span><span class="info-creds" onclick="fillDemo('viewer','viewer123')" style="cursor:pointer;color:#0ea5e9">viewer / viewer123</span></div>
+    </div>
+  </div>
+</div>
+<script>
+  const users = {
+    admin:  { password:'admin123',  name:'System Administrator' },
+    agent:  { password:'agent123',  name:'Booking Agent' },
+    viewer: { password:'viewer123', name:'Viewer' }
+  };
+
+  function fillDemo(u, p) {
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+  }
+
+  function handleLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const alertEl  = document.getElementById('alert');
+
+    if (!username || !password) {
+      alertEl.textContent = 'Please enter username and password.';
+      alertEl.className = 'alert error'; return;
+    }
+
+    const user = users[username];
+    if (!user || user.password !== password) {
+      alertEl.textContent = 'Invalid username or password.';
+      alertEl.className = 'alert error'; return;
+    }
+
+    alertEl.textContent = `Welcome, ${user.name}! Redirecting...`;
+    alertEl.className = 'alert success';
+
+    localStorage.setItem('airline_user', JSON.stringify({ username, name: user.name, loggedIn: true }));
+    setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+  }
+
+  document.addEventListener('keypress', e => { if (e.key === 'Enter') handleLogin(); });
+</script>
+</body>
+</html>

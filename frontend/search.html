@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Flights - Airline MS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .search-box {
+      background: linear-gradient(135deg, #0f3460, #533483);
+      padding: 40px;
+      border-radius: 16px;
+      margin-bottom: 30px;
+    }
+    .search-box h2 { color: white; margin-bottom: 20px; font-size: 24px; }
+    .search-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      align-items: end;
+    }
+    .search-grid .form-group label { color: white; }
+    .search-grid input { background: white; }
+    .flight-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      transition: transform 0.2s;
+    }
+    .flight-card:hover { transform: translateY(-3px); }
+    .flight-route { display: flex; align-items: center; gap: 15px; }
+    .city { font-size: 22px; font-weight: bold; color: #0f3460; }
+    .arrow { font-size: 24px; color: #533483; }
+    .flight-info { font-size: 13px; color: #888; margin-top: 5px; }
+    .flight-price { text-align: right; }
+    .flight-price h3 { font-size: 24px; color: #0f3460; font-weight: bold; }
+    .flight-price p { font-size: 12px; color: #888; }
+    .seats-badge {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .seats-low { background: #fff3e0; color: #e65100; }
+    .no-flights { text-align: center; padding: 50px; color: #888; font-size: 18px; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">✈️ AirLine MS</div>
+    <ul class="nav-links">
+  <li><a href="index.html">Dashboard</a></li>
+  <li><a href="flights.html">Flights</a></li>
+  <li><a href="passengers.html">Passengers</a></li>
+  <li><a href="bookings.html">Bookings</a></li>
+  <li><a href="search.html">Search</a></li>
+  <li><a href="reports.html">Reports</a></li>
+  <li><a href="ticket.html">Ticket</a></li>
+  <li><a href="calendar.html">Calendar</a></li>
+  <li><a href="tracking.html">Tracking</a></li>
+<li><a href="seatmap.html">Seat Map</a></li>
+<li><a href="history.html">History</a></li>
+</ul>
+    <button class="bell-btn" onclick="NotificationSystem.togglePanel()">
+      🔔
+      <span class="bell-badge" id="bellBadge" style="display:none">0</span>
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <h3>🔔 Notifications</h3>
+      <button class="clear-btn" onclick="NotificationSystem.clearAll()">Clear All</button>
+    </div>
+    <div id="notifList"></div>
+  </div>
+
+  <div class="container" style="margin-top:30px">
+    <div class="search-box">
+      <h2>🔍 Search Available Flights</h2>
+      <div class="search-grid">
+        <div class="form-group">
+  <label>Departure City</label>
+  <select id="fromCity" style="background:white;color:#1e293b;">
+    <option value="">All Cities</option>
+    <option>Karachi</option>
+    <option>Lahore</option>
+    <option>Islamabad</option>
+    <option>Peshawar</option>
+    <option>Quetta</option>
+    <option>Multan</option>
+    <option>Faisalabad</option>
+    <option>Sialkot</option>
+  </select>
+        <div class="form-group">
+  <label>Departure City</label>
+  <select id="fromCity" style="background:white;color:#1e293b;">
+    <option value="">All Cities</option>
+    <option>Karachi</option>
+    <option>Lahore</option>
+    <option>Islamabad</option>
+    <option>Peshawar</option>
+    <option>Quetta</option>
+    <option>Multan</option>
+    <option>Faisalabad</option>
+    <option>Sialkot</option>
+  </select>
+        <div class="form-group">
+          <label>Maximum Fare (Rs)</label>
+          <input type="number" id="maxFare" placeholder="e.g. 50000">
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+          <button class="btn btn-primary"
+            style="width:100%;background:white;color:#0f3460;font-weight:bold;"
+            onclick="searchFlights()">
+            Search Flights ✈️
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <div id="resultsSection" style="display:none">
+      <h2 style="color:#0f3460;margin-bottom:20px" id="resultsTitle"></h2>
+      <div id="flightResults"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="bookingModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Book Flight</h2>
+        <button class="close-btn" onclick="closeModal()">✕</button>
+      </div>
+
+      <div id="selectedFlightInfo"
+        style="background:#f0f4f8;padding:15px;border-radius:10px;margin-bottom:20px">
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Select Passenger</label>
+          <select id="passengerSelect"></select>
+        </div>
+        <div class="form-group">
+          <label>Seat Number</label>
+          <input type="text" id="seatNumber" placeholder="e.g. A12">
+        </div>
+        <div class="form-group">
+          <label>Seat Class</label>
+          <select id="seatClass">
+            <option>Economy</option>
+            <option>Business</option>
+            <option>First</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payment Status</label>
+          <select id="paymentStatus">
+            <option>Paid</option>
+            <option>Pending</option>
+          </select>
+        </div>
+      </div>
+
+      <input type="hidden" id="selectedFlightId">
+      <input type="hidden" id="selectedFare">
+      <input type="hidden" id="selectedFlightText">
+
+      <button class="btn btn-primary" style="width:100%;margin-top:10px"
+        onclick="confirmBooking()">
+        Confirm Booking 🎫
+      </button>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    let allFlights = [];
+
+    async function loadAllFlights() {
+      allFlights = await getFlights();
+      showResults(allFlights, 'All Available Flights');
+    }
+
+    function searchFlights() {
+      const from = document.getElementById('fromCity').value.trim().toLowerCase();
+      const to = document.getElementById('toCity').value.trim().toLowerCase();
+      const maxFare = document.getElementById('maxFare').value;
+
+      let filtered = allFlights;
+
+      if (from) filtered = filtered.filter(f => f.origin.toLowerCase().includes(from));
+      if (to) filtered = filtered.filter(f => f.destination.toLowerCase().includes(to));
+      if (maxFare) filtered = filtered.filter(f => f.fare <= parseInt(maxFare));
+
+      let title = 'Search Results';
+      const fromVal = document.getElementById('fromCity').value;
+      const toVal = document.getElementById('toCity').value;
+
+      if (fromVal && toVal) title = `Flights from ${fromVal} to ${toVal}`;
+      else if (fromVal) title = `Flights departing from ${fromVal}`;
+      else if (toVal) title = `Flights arriving at ${toVal}`;
+
+      showResults(filtered, title);
+    }
+
+    function showResults(flights, title) {
+      const section = document.getElementById('resultsSection');
+      const resultsDiv = document.getElementById('flightResults');
+      const titleEl = document.getElementById('resultsTitle');
+
+      section.style.display = 'block';
+      titleEl.textContent = `${title} (${flights.length} found)`;
+      resultsDiv.innerHTML = '';
+
+      if (flights.length === 0) {
+        resultsDiv.innerHTML = '<div class="no-flights">No flights found for this route.</div>';
+        return;
+      }
+
+      flights.forEach(f => {
+        const dep = new Date(f.departureTime).toLocaleString();
+        const arr = new Date(f.arrivalTime).toLocaleString();
+        const seatsLow = f.availableSeats <= 10;
+
+        resultsDiv.innerHTML += `
+          <div class="flight-card">
+            <div>
+              <div style="font-size:13px;color:#888;margin-bottom:8px">✈️ ${f.flightNumber}</div>
+              <div class="flight-route">
+                <div>
+                  <div class="city">${f.origin}</div>
+                  <div class="flight-info">Departure: ${dep}</div>
+                </div>
+                <div class="arrow">→</div>
+                <div>
+                  <div class="city">${f.destination}</div>
+                  <div class="flight-info">Arrival: ${arr}</div>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:center">
+              <span class="seats-badge ${seatsLow ? 'seats-low' : ''}">
+                ${seatsLow ? '⚠️' : '✅'} ${f.availableSeats} seats available
+              </span>
+              <div style="margin-top:8px">
+                <span class="badge ${f.status.toLowerCase()}">${f.status}</span>
+              </div>
+            </div>
+            <div class="flight-price">
+              <h3>Rs ${f.fare.toLocaleString()}</h3>
+              <p>per person</p>
+              <button class="btn btn-primary" style="margin-top:10px"
+                onclick="openBooking('${f._id}', '${f.flightNumber}',
+                '${f.origin}', '${f.destination}', ${f.fare})">
+                Book Now
+              </button>
+            </div>
+          </div>`;
+      });
+    }
+
+    async function openBooking(id, flightNo, origin, dest, fare) {
+      document.getElementById('selectedFlightId').value = id;
+      document.getElementById('selectedFare').value = fare;
+      document.getElementById('selectedFlightText').value = `${flightNo} - ${origin} to ${dest}`;
+      document.getElementById('selectedFlightInfo').innerHTML = `
+        <b>✈️ ${flightNo}</b> &nbsp;|&nbsp;
+        ${origin} → ${dest} &nbsp;|&nbsp;
+        <b>Rs ${fare.toLocaleString()}</b>
+      `;
+
+      const passengers = await getPassengers();
+      const select = document.getElementById('passengerSelect');
+      select.innerHTML = '';
+      passengers.forEach(p => {
+        select.innerHTML += `<option value="${p._id}">${p.name} — ${p.cnic}</option>`;
+      });
+
+      document.getElementById('bookingModal').classList.add('active');
+    }
+
+    async function confirmBooking() {
+      const flightText = document.getElementById('selectedFlightText').value;
+      const data = {
+        flight: document.getElementById('selectedFlightId').value,
+        passenger: document.getElementById('passengerSelect').value,
+        seatNumber: document.getElementById('seatNumber').value,
+        seatClass: document.getElementById('seatClass').value,
+        fare: parseInt(document.getElementById('selectedFare').value),
+        paymentStatus: document.getElementById('paymentStatus').value
+      };
+
+      if (!data.seatNumber) {
+        alert('Please enter a seat number.');
+        return;
+      }
+
+      const result = await addBooking(data);
+
+      if (result._id) {
+        closeModal();
+        notifyBooking(result.bookingReference, flightText);
+        notifyPayment(result.bookingReference, data.paymentStatus);
+        loadAllFlights();
+      } else {
+        alert(result.message || 'Error creating booking. Please try again.');
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('bookingModal').classList.remove('active');
+    }
+
+    NotificationSystem.init();
+    loadAllFlights();
+  </script>
+
+</body>
+</html>

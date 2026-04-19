@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flight Tracking - Airline MS</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .search-bar {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-end;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .search-bar .form-group { margin: 0; flex: 1; }
+
+    .track-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      display: none;
+      margin-bottom: 24px;
+    }
+    .track-card.visible { display: block; }
+
+    .track-header {
+      background: linear-gradient(135deg, #1e3a5f, #0ea5e9);
+      padding: 24px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .track-flight-no { color: white; font-size: 28px; font-weight: 700; letter-spacing: 2px; }
+    .track-airline { color: rgba(255,255,255,0.8); font-size: 13px; margin-top: 4px; }
+
+    .track-route {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 30px;
+      border-bottom: 1px solid #e2e8f0;
+      background: #fafafa;
+    }
+
+    .track-city { text-align: center; }
+    .track-city-code { font-size: 38px; font-weight: 700; color: #1e293b; }
+    .track-city-name { font-size: 14px; color: #64748b; margin-top: 4px; }
+    .track-time { font-size: 22px; font-weight: 700; color: #1e293b; margin-top: 6px; }
+    .track-date { font-size: 12px; color: #94a3b8; margin-top: 2px; }
+
+    .track-middle { flex: 1; text-align: center; padding: 0 20px; }
+    .track-plane { font-size: 28px; margin-bottom: 8px; }
+    .track-duration { font-size: 13px; color: #64748b; margin-bottom: 8px; }
+    .progress-track { background: #e2e8f0; height: 3px; border-radius: 3px; position: relative; margin: 10px 0; }
+    .progress-fill-track { height: 100%; background: linear-gradient(90deg, #0ea5e9, #1e3a5f); border-radius: 3px; transition: width 0.5s ease; }
+    .progress-plane { position: absolute; top: -10px; font-size: 20px; transition: left 0.5s ease; }
+
+    .track-info-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .track-info-item {
+      padding: 20px;
+      border-right: 1px solid #e2e8f0;
+      text-align: center;
+    }
+    .track-info-item:last-child { border-right: none; }
+    .track-info-label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .track-info-value { font-size: 16px; font-weight: 700; color: #1e293b; }
+
+    .track-timeline { padding: 24px 30px; }
+    .track-timeline h3 { color: #1e293b; font-size: 15px; font-weight: 600; margin-bottom: 20px; }
+
+    .timeline { position: relative; padding-left: 30px; }
+    .timeline::before { content: ''; position: absolute; left: 10px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+
+    .timeline-item { position: relative; margin-bottom: 24px; }
+    .timeline-dot {
+      position: absolute;
+      left: -24px;
+      top: 4px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid #e2e8f0;
+      background: white;
+    }
+    .timeline-dot.done { background: #0ea5e9; border-color: #0ea5e9; }
+    .timeline-dot.current { background: #16a34a; border-color: #16a34a; box-shadow: 0 0 0 4px rgba(22,163,74,0.2); }
+    .timeline-dot.pending { background: white; border-color: #e2e8f0; }
+
+    .timeline-time { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+    .timeline-title { font-size: 14px; font-weight: 600; color: #1e293b; }
+    .timeline-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
+
+    .status-badge-large {
+      padding: 8px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .all-flights-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .flight-track-card {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .flight-track-card:hover { border-color: #0ea5e9; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(14,165,233,0.12); }
+    .ftc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .ftc-num { font-size: 18px; font-weight: 700; color: #1e293b; }
+    .ftc-route { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .ftc-city { font-size: 15px; font-weight: 600; color: #1e293b; }
+    .ftc-arrow { color: #0ea5e9; font-size: 16px; }
+    .ftc-time { font-size: 12px; color: #64748b; }
+    .ftc-progress { background: #f1f5f9; height: 4px; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+    .ftc-progress-fill { height: 100%; background: #0ea5e9; border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">✈️ AirLine MS</div>
+    <ul class="nav-links">
+      <li><a href="index.html">Dashboard</a></li>
+      <li><a href="flights.html">Flights</a></li>
+      <li><a href="passengers.html">Passengers</a></li>
+      <li><a href="bookings.html">Bookings</a></li>
+      <li><a href="search.html">Search</a></li>
+      <li><a href="tracking.html" class="active">Tracking</a></li>
+      <li><a href="reports.html">Reports</a></li>
+      <li><a href="ticket.html">Ticket</a></li>
+      <li><a href="calendar.html">Calendar</a></li>
+    </ul>
+    <button class="bell-btn" onclick="NotificationSystem.togglePanel()">
+      🔔 <span class="bell-badge" id="bellBadge" style="display:none">0</span>
+    </button>
+  </nav>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <h3>🔔 Notifications</h3>
+      <button class="clear-btn" onclick="NotificationSystem.clearAll()">Clear All</button>
+    </div>
+    <div id="notifList"></div>
+  </div>
+
+  <div class="container" style="margin-top:30px">
+    <div class="page-header">
+      <h1>✈️ Flight Tracking</h1>
+      <button class="btn btn-primary" onclick="loadAllFlights()">🔄 Refresh</button>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar">
+      <div class="form-group">
+        <label>Search by Flight Number</label>
+        <input type="text" id="flightSearch" placeholder="e.g. PK-301" onkeypress="if(event.key==='Enter')trackFlight()">
+      </div>
+      <button class="btn btn-primary" onclick="trackFlight()" style="white-space:nowrap">Track Flight ✈️</button>
+    </div>
+
+    <div class="alert" id="alert"></div>
+
+    <!-- Flight Detail Card -->
+    <div class="track-card" id="trackCard">
+      <div class="track-header">
+        <div>
+          <div class="track-flight-no" id="tFlightNo">PK-301</div>
+          <div class="track-airline">Pakistan — AirLine MS</div>
+        </div>
+        <div id="tStatusBadge"></div>
+      </div>
+
+      <div class="track-route">
+        <div class="track-city">
+          <div class="track-city-code" id="tOriginCode">KHI</div>
+          <div class="track-city-name" id="tOrigin">Karachi</div>
+          <div class="track-time" id="tDepTime">08:00</div>
+          <div class="track-date" id="tDepDate">Dec 1, 2024</div>
+        </div>
+        <div class="track-middle">
+          <div class="track-plane">✈️</div>
+          <div class="track-duration" id="tDuration">2h 00m</div>
+          <div class="progress-track">
+            <div class="progress-fill-track" id="tProgress" style="width:0%"></div>
+            <div class="progress-plane" id="tProgressPlane" style="left:0%">✈</div>
+          </div>
+        </div>
+        <div class="track-city">
+          <div class="track-city-code" id="tDestCode">LHE</div>
+          <div class="track-city-name" id="tDest">Lahore</div>
+          <div class="track-time" id="tArrTime">10:00</div>
+          <div class="track-date" id="tArrDate">Dec 1, 2024</div>
+        </div>
+      </div>
+
+      <div class="track-info-grid">
+        <div class="track-info-item">
+          <div class="track-info-label">Total Seats</div>
+          <div class="track-info-value" id="tTotalSeats">-</div>
+        </div>
+        <div class="track-info-item">
+          <div class="track-info-label">Available Seats</div>
+          <div class="track-info-value" id="tAvailSeats" style="color:#16a34a">-</div>
+        </div>
+        <div class="track-info-item">
+          <div class="track-info-label">Booked Seats</div>
+          <div class="track-info-value" id="tBookedSeats" style="color:#dc2626">-</div>
+        </div>
+        <div class="track-info-item">
+          <div class="track-info-label">Fare</div>
+          <div class="track-info-value" id="tFare" style="color:#0ea5e9">-</div>
+        </div>
+      </div>
+
+      <div class="track-timeline">
+        <h3>📍 Flight Timeline</h3>
+        <div class="timeline" id="tTimeline"></div>
+      </div>
+    </div>
+
+    <!-- All Flights Grid -->
+    <div>
+      <h2 style="color:#1e293b;font-size:16px;font-weight:600;margin-bottom:16px;">All Flights Status</h2>
+      <div class="all-flights-grid" id="allFlightsGrid">
+        <div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:30px;">Loading flights...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/notifications.js"></script>
+  <script>
+    let allFlights = [];
+
+    const cityCode = { 'Karachi':'KHI','Lahore':'LHE','Islamabad':'ISB','Peshawar':'PEW','Quetta':'UET','Multan':'MUX','Faisalabad':'LYP','Sialkot':'SKT' };
+
+    function getProgress(dep, arr) {
+      const now = new Date();
+      const d = new Date(dep);
+      const a = new Date(arr);
+      if (now < d) return 0;
+      if (now > a) return 100;
+      return Math.round(((now - d) / (a - d)) * 100);
+    }
+
+    function getDuration(dep, arr) {
+      const diff = new Date(arr) - new Date(dep);
+      const h = Math.floor(diff / 3600000);
+      const m = Math.round((diff % 3600000) / 60000);
+      return `${h}h ${m}m`;
+    }
+
+    function getTimeline(f) {
+      const now = new Date();
+      const dep = new Date(f.departureTime);
+      const arr = new Date(f.arrivalTime);
+      const items = [
+        { time: 'Booking Open', title: 'Booking Available', desc: 'Flight open for reservations', done: true },
+        { time: dep.toLocaleString(), title: 'Departure', desc: `Departing from ${f.origin}`, done: now >= dep, current: now >= dep && now < arr },
+        { time: 'In Flight', title: 'En Route', desc: `Flying from ${f.origin} to ${f.destination}`, done: now > dep && now < arr, current: now > dep && now < arr },
+        { time: arr.toLocaleString(), title: 'Arrival', desc: `Arriving at ${f.destination}`, done: now >= arr }
+      ];
+
+      if (f.status === 'Delayed') {
+        items.splice(1, 0, { time: 'Updated', title: 'Flight Delayed ⚠️', desc: 'New departure time updated', done: true, warning: true });
+      }
+      if (f.status === 'Cancelled') {
+        items.splice(1, 0, { time: 'Notice', title: 'Flight Cancelled ❌', desc: 'Flight has been cancelled', done: true, danger: true });
+      }
+
+      return items.map(item => `
+        <div class="timeline-item">
+          <div class="timeline-dot ${item.danger ? 'current' : item.done ? (item.current ? 'current' : 'done') : 'pending'}"
+               style="${item.danger ? 'background:#dc2626;border-color:#dc2626' : item.warning ? 'background:#d97706;border-color:#d97706' : ''}">
+          </div>
+          <div class="timeline-time">${item.time}</div>
+          <div class="timeline-title" style="${item.danger ? 'color:#dc2626' : item.warning ? 'color:#d97706' : ''}">${item.title}</div>
+          <div class="timeline-desc">${item.desc}</div>
+        </div>`).join('');
+    }
+
+    function getStatusColor(status) {
+      const map = { 'Scheduled':'background:#dbeafe;color:#1d4ed8', 'Delayed':'background:#fef3c7;color:#d97706', 'Cancelled':'background:#fee2e2;color:#dc2626', 'Completed':'background:#dcfce7;color:#16a34a' };
+      return map[status] || map['Scheduled'];
+    }
+
+    async function loadAllFlights() {
+      allFlights = await getFlights();
+      const grid = document.getElementById('allFlightsGrid');
+      grid.innerHTML = '';
+
+      if (allFlights.length === 0) {
+        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#94a3b8;padding:30px;">No flights found.</div>';
+        return;
+      }
+
+      allFlights.forEach(f => {
+        const prog = getProgress(f.departureTime, f.arrivalTime);
+        const booked = f.totalSeats - f.availableSeats;
+        grid.innerHTML += `
+          <div class="flight-track-card" onclick="showFlight('${f._id}')">
+            <div class="ftc-header">
+              <div class="ftc-num">✈ ${f.flightNumber}</div>
+              <span class="badge ${f.status.toLowerCase()}">${f.status}</span>
+            </div>
+            <div class="ftc-route">
+              <div class="ftc-city">${f.origin}</div>
+              <div class="ftc-arrow">→</div>
+              <div class="ftc-city">${f.destination}</div>
+            </div>
+            <div class="ftc-time">
+              Dep: ${new Date(f.departureTime).toLocaleString()} &nbsp;|&nbsp;
+              Arr: ${new Date(f.arrivalTime).toLocaleString()}
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#64748b;margin-top:10px;">
+              <span>Seats: ${f.availableSeats}/${f.totalSeats} available</span>
+              <span style="color:#0ea5e9;font-weight:600;">Rs ${f.fare.toLocaleString()}</span>
+            </div>
+            <div class="ftc-progress">
+              <div class="ftc-progress-fill" style="width:${prog}%"></div>
+            </div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:4px;text-align:right">${prog}% complete</div>
+          </div>`;
+      });
+    }
+
+    function showFlight(id) {
+      const f = allFlights.find(f => f._id === id);
+      if (!f) return;
+      document.getElementById('flightSearch').value = f.flightNumber;
+      displayFlight(f);
+    }
+
+    async function trackFlight() {
+      const query = document.getElementById('flightSearch').value.trim().toUpperCase();
+      if (!query) { showAlert('Please enter a flight number.', 'error'); return; }
+
+      const f = allFlights.find(f => f.flightNumber.toUpperCase() === query);
+      if (!f) { showAlert(`Flight ${query} not found.`, 'error'); return; }
+
+      displayFlight(f);
+    }
+
+    function displayFlight(f) {
+      const prog = getProgress(f.departureTime, f.arrivalTime);
+      const dep = new Date(f.departureTime);
+      const arr = new Date(f.arrivalTime);
+      const booked = f.totalSeats - f.availableSeats;
+
+      document.getElementById('tFlightNo').textContent = f.flightNumber;
+      document.getElementById('tOriginCode').textContent = cityCode[f.origin] || f.origin.substring(0,3).toUpperCase();
+      document.getElementById('tOrigin').textContent = f.origin;
+      document.getElementById('tDestCode').textContent = cityCode[f.destination] || f.destination.substring(0,3).toUpperCase();
+      document.getElementById('tDest').textContent = f.destination;
+      document.getElementById('tDepTime').textContent = dep.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+      document.getElementById('tDepDate').textContent = dep.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+      document.getElementById('tArrTime').textContent = arr.toLocaleTimeString('en-US', {hour:'2-digit',minute:'2-digit'});
+      document.getElementById('tArrDate').textContent = arr.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+      document.getElementById('tDuration').textContent = getDuration(f.departureTime, f.arrivalTime);
+      document.getElementById('tProgress').style.width = prog + '%';
+      document.getElementById('tProgressPlane').style.left = Math.min(prog, 95) + '%';
+      document.getElementById('tTotalSeats').textContent = f.totalSeats;
+      document.getElementById('tAvailSeats').textContent = f.availableSeats;
+      document.getElementById('tBookedSeats').textContent = booked;
+      document.getElementById('tFare').textContent = 'Rs ' + f.fare.toLocaleString();
+      document.getElementById('tTimeline').innerHTML = getTimeline(f);
+
+      const statusStyle = getStatusColor(f.status);
+      document.getElementById('tStatusBadge').innerHTML = `<span class="status-badge-large" style="${statusStyle}">${f.status}</span>`;
+
+      document.getElementById('trackCard').classList.add('visible');
+      document.getElementById('trackCard').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('alert').className = 'alert';
+    }
+
+    function showAlert(msg, type) {
+      const a = document.getElementById('alert');
+      a.textContent = msg;
+      a.className = `alert ${type}`;
+      setTimeout(() => { a.className = 'alert'; }, 3000);
+    }
+
+    NotificationSystem.init();
+    loadAllFlights();
+
+    // Auto refresh every 30 seconds
+    setInterval(loadAllFlights, 30000);
+  </script>
+</body>
+</html>
