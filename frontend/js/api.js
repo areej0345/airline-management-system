@@ -1,8 +1,6 @@
 const API_BASE = "https://airline-management-system-production-ea33.up.railway.app/api";
 
-// ==================
-// FLIGHTS API
-// ==================
+console.log("UPDATED API FILE WORKING 🔥");
 
 async function getFlights() {
   const res = await fetch(`${API_BASE}/flights`);
