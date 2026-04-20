@@ -4,6 +4,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+
+// ✅ FIXED CORS
 app.use(cors());
 app.use(express.json());
 // MongoDB Connection
