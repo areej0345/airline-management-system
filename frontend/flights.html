@@ -4,13 +4,37 @@ async function saveFlight() {
     const origin      = document.getElementById('origin').value;
     const destination = document.getElementById('destination').value;
 
-    // ✅ FIX: ISO date format
-    const departure = new Date(document.getElementById('departureTime').value).toISOString();
-    const arrival   = new Date(document.getElementById('arrivalTime').value).toISOString();
+    // ✅ ISO format fix (IMPORTANT)
+    const departureValue = document.getElementById('departureTime').value;
+    const arrivalValue   = document.getElementById('arrivalTime').value;
+
+    const departure = departureValue ? new Date(departureValue).toISOString() : null;
+    const arrival   = arrivalValue ? new Date(arrivalValue).toISOString() : null;
 
     const totalSeats  = Number(document.getElementById('totalSeats').value);
     const fare        = Number(document.getElementById('fare').value);
     const status      = document.getElementById('status').value;
+
+    // ✅ Validation (VERY IMPORTANT)
+    if (!flightNumber || !origin || !destination || !departure || !arrival) {
+      showAlert('Please fill all fields!', 'error');
+      return;
+    }
+
+    if (origin === destination) {
+      showAlert('Origin and destination cannot be same!', 'error');
+      return;
+    }
+
+    if (new Date(arrival) <= new Date(departure)) {
+      showAlert('Arrival must be after departure!', 'error');
+      return;
+    }
+
+    if (totalSeats <= 0 || fare <= 0) {
+      showAlert('Seats and fare must be greater than 0!', 'error');
+      return;
+    }
 
     const data = {
       flightNumber,
@@ -19,6 +43,7 @@ async function saveFlight() {
       departureTime: departure,
       arrivalTime: arrival,
       totalSeats,
+      availableSeats: totalSeats, // ✅ FIX
       fare,
       status
     };
@@ -32,7 +57,6 @@ async function saveFlight() {
     });
 
     const result = await res.json();
-
     console.log("RESPONSE 👉", result);
 
     if (res.ok) {
