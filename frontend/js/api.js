@@ -1,15 +1,16 @@
 const BASE_URL = "https://airline-management-system-production-ea33.up.railway.app/api";
+
 // ==================
 // FLIGHTS API
 // ==================
 
 async function getFlights() {
-  const res = await fetch(`${API_BASE}/flights`);
+  const res = await fetch(`${BASE_URL}/flights`);
   return await res.json();
 }
 
 async function addFlight(data) {
-  const res = await fetch(`${API_BASE}/flights`, {
+  const res = await fetch(`${BASE_URL}/flights`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -18,7 +19,7 @@ async function addFlight(data) {
 }
 
 async function updateFlight(id, data) {
-  const res = await fetch(`${API_BASE}/flights/${id}`, {
+  const res = await fetch(`${BASE_URL}/flights/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -27,7 +28,7 @@ async function updateFlight(id, data) {
 }
 
 async function deleteFlight(id) {
-  const res = await fetch(`${API_BASE}/flights/${id}`, {
+  const res = await fetch(`${BASE_URL}/flights/${id}`, {
     method: 'DELETE'
   });
   return await res.json();
@@ -38,12 +39,12 @@ async function deleteFlight(id) {
 // ==================
 
 async function getPassengers() {
-  const res = await fetch(`${API_BASE}/passengers`);
+  const res = await fetch(`${BASE_URL}/passengers`);
   return await res.json();
 }
 
 async function addPassenger(data) {
-  const res = await fetch(`${API_BASE}/passengers`, {
+  const res = await fetch(`${BASE_URL}/passengers`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -52,7 +53,7 @@ async function addPassenger(data) {
 }
 
 async function updatePassenger(id, data) {
-  const res = await fetch(`${API_BASE}/passengers/${id}`, {
+  const res = await fetch(`${BASE_URL}/passengers/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -61,7 +62,7 @@ async function updatePassenger(id, data) {
 }
 
 async function deletePassenger(id) {
-  const res = await fetch(`${API_BASE}/passengers/${id}`, {
+  const res = await fetch(`${BASE_URL}/passengers/${id}`, {
     method: 'DELETE'
   });
   return await res.json();
@@ -72,12 +73,12 @@ async function deletePassenger(id) {
 // ==================
 
 async function getBookings() {
-  const res = await fetch(`${API_BASE}/bookings`);
+  const res = await fetch(`${BASE_URL}/bookings`);
   return await res.json();
 }
 
 async function addBooking(data) {
-  const res = await fetch(`${API_BASE}/bookings`, {
+  const res = await fetch(`${BASE_URL}/bookings`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
@@ -86,7 +87,7 @@ async function addBooking(data) {
 }
 
 async function deleteBooking(id) {
-  const res = await fetch(`${API_BASE}/bookings/${id}`, {
+  const res = await fetch(`${BASE_URL}/bookings/${id}`, {
     method: 'DELETE'
   });
   return await res.json();
@@ -98,7 +99,7 @@ async function deleteBooking(id) {
 
 async function sendBookingNotification(data) {
   try {
-    const res = await fetch(`${API_BASE}/notifications/booking-confirm`, {
+    const res = await fetch(`${BASE_URL}/notifications/booking-confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -111,7 +112,7 @@ async function sendBookingNotification(data) {
 
 async function sendFlightStatusNotification(data) {
   try {
-    const res = await fetch(`${API_BASE}/notifications/flight-status`, {
+    const res = await fetch(`${BASE_URL}/notifications/flight-status`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
