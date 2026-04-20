@@ -1,5 +1,4 @@
-const API_BASE = "https://airline-management-system-production-ea33.up.railway.app/api";
-
+const BASE_URL = "https://airline-management-system-production-ea33.up.railway.app/api";
 // ==================
 // FLIGHTS API
 // ==================
