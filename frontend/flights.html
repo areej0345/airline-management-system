@@ -4,19 +4,15 @@ async function saveFlight() {
     const origin      = document.getElementById('origin').value;
     const destination = document.getElementById('destination').value;
 
-    // ✅ ISO format fix (IMPORTANT)
-    const departureValue = document.getElementById('departureTime').value;
-    const arrivalValue   = document.getElementById('arrivalTime').value;
-
-    const departure = departureValue ? new Date(departureValue).toISOString() : null;
-    const arrival   = arrivalValue ? new Date(arrivalValue).toISOString() : null;
+    const depInput = document.getElementById('departureTime').value;
+    const arrInput = document.getElementById('arrivalTime').value;
 
     const totalSeats  = Number(document.getElementById('totalSeats').value);
     const fare        = Number(document.getElementById('fare').value);
     const status      = document.getElementById('status').value;
 
-    // ✅ Validation (VERY IMPORTANT)
-    if (!flightNumber || !origin || !destination || !departure || !arrival) {
+    // ✅ VALIDATION
+    if (!flightNumber || !origin || !destination || !depInput || !arrInput) {
       showAlert('Please fill all fields!', 'error');
       return;
     }
@@ -26,7 +22,15 @@ async function saveFlight() {
       return;
     }
 
-    if (new Date(arrival) <= new Date(departure)) {
+    const departureDate = new Date(depInput);
+    const arrivalDate   = new Date(arrInput);
+
+    if (isNaN(departureDate) || isNaN(arrivalDate)) {
+      showAlert('Invalid date format!', 'error');
+      return;
+    }
+
+    if (arrivalDate <= departureDate) {
       showAlert('Arrival must be after departure!', 'error');
       return;
     }
@@ -36,14 +40,15 @@ async function saveFlight() {
       return;
     }
 
+    // ✅ FINAL ISO FORMAT (THIS FIXES 400 ERROR)
     const data = {
       flightNumber,
       origin,
       destination,
-      departureTime: departure,
-      arrivalTime: arrival,
+      departureTime: departureDate.toISOString(),
+      arrivalTime: arrivalDate.toISOString(),
       totalSeats,
-      availableSeats: totalSeats, // ✅ FIX
+      availableSeats: totalSeats,
       fare,
       status
     };
