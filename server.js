@@ -4,9 +4,14 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+app.use(cors({
+  origin: '*',
+  methods: ['GET','POST','PUT','DELETE'],
+  allowedHeaders: ['Content-Type']
+}));
 
-// ✅ FIXED CORS
-app.use(cors());
+app.options('*', cors());
+
 app.use(express.json());
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/airlineDB')
