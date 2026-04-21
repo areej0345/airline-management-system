@@ -1,6 +1,3 @@
-<script src="js/api.js"></script>
-<script src="js/notifications.js"></script>
-
 <script>
 async function saveFlight() {
   try {
@@ -58,16 +55,12 @@ async function saveFlight() {
 
     console.log("SENDING DATA 👉", data);
 
-    const res = await fetch(`${API_BASE}/flights`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
+    // ✅ FIX: use api.js function instead of direct fetch
+    const result = await addFlight(data);
 
-    const result = await res.json();
     console.log("RESPONSE 👉", result);
 
-    if (res.ok) {
+    if (!result.error) {
       showAlert('Flight added successfully!', 'success');
       closeModal();
       clearForm();
@@ -82,6 +75,3 @@ async function saveFlight() {
   }
 }
 </script>
-
-</body>
-</html>
