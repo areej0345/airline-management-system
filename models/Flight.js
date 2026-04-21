@@ -1,10 +1,5 @@
 const mongoose = require('mongoose');
 
-const pakistaniCities = [
-  'Karachi', 'Lahore', 'Islamabad', 'Peshawar',
-  'Quetta', 'Multan', 'Faisalabad', 'Sialkot'
-];
-
 const flightSchema = new mongoose.Schema({
   flightNumber: {
     type: String,
@@ -13,19 +8,11 @@ const flightSchema = new mongoose.Schema({
   },
   origin: {
     type: String,
-    required: true,
-    enum: {
-      values: pakistaniCities,
-      message: '{VALUE} is not a valid Pakistani city'
-    }
+    required: true
   },
   destination: {
     type: String,
-    required: true,
-    enum: {
-      values: pakistaniCities,
-      message: '{VALUE} is not a valid Pakistani city'
-    }
+    required: true
   },
   departureTime: {
     type: Date,
