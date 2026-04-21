@@ -1,3 +1,8 @@
+<!-- ✅ scripts ALWAYS body ke end me -->
+
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+
 <script>
 async function saveFlight() {
   try {
@@ -12,7 +17,6 @@ async function saveFlight() {
     const fare        = Number(document.getElementById('fare').value);
     const status      = document.getElementById('status').value;
 
-    // VALIDATION
     if (!flightNumber || !origin || !destination || !depInput || !arrInput) {
       showAlert('Please fill all fields!', 'error');
       return;
@@ -55,7 +59,6 @@ async function saveFlight() {
 
     console.log("SENDING DATA 👉", data);
 
-    // ✅ FIX: use api.js function instead of direct fetch
     const result = await addFlight(data);
 
     console.log("RESPONSE 👉", result);
@@ -75,3 +78,6 @@ async function saveFlight() {
   }
 }
 </script>
+
+</body>
+</html>
