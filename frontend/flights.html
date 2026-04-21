@@ -1,3 +1,7 @@
+<script src="js/api.js"></script>
+<script src="js/notifications.js"></script>
+
+<script>
 async function saveFlight() {
   try {
     const flightNumber = document.getElementById('flightNumber').value.trim();
@@ -11,7 +15,7 @@ async function saveFlight() {
     const fare        = Number(document.getElementById('fare').value);
     const status      = document.getElementById('status').value;
 
-    // ✅ VALIDATION
+    // VALIDATION
     if (!flightNumber || !origin || !destination || !depInput || !arrInput) {
       showAlert('Please fill all fields!', 'error');
       return;
@@ -40,7 +44,6 @@ async function saveFlight() {
       return;
     }
 
-    // ✅ FINAL ISO FORMAT (THIS FIXES 400 ERROR)
     const data = {
       flightNumber,
       origin,
@@ -78,3 +81,7 @@ async function saveFlight() {
     showAlert('Something went wrong!', 'error');
   }
 }
+</script>
+
+</body>
+</html>
