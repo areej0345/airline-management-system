@@ -1,35 +1,39 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
 
-app.use(cors());
+// Patch Express internal options handler
+const originalOptions = app.options.bind(app);
+app.options = function(path, ...handlers) {
+  if (path === '*') path = '/{*splat}';
+  return originalOptions(path, ...handlers);
+};
+
+// Manual CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 app.use(express.json());
 
-// MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/airlineDB')
-  .then(() => {
-    console.log('✅ MongoDB Connected Successfully!');
-  })
-  .catch((err) => {
-    console.log('❌ MongoDB Connection Failed:', err);
-  });
+  .then(() => console.log('✅ MongoDB Connected Successfully!'))
+  .catch((err) => console.log('❌ MongoDB Connection Failed:', err));
 
-// Routes
 app.use('/api/flights', require('./routes/flights'));
 app.use('/api/passengers', require('./routes/passengers'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/notifications', require('./routes/notifications'));
 
-// Test Route
 app.get('/', (req, res) => {
   res.json({ message: '✈️ Airline Management System Running!' });
 });
 
-// Server Start
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
