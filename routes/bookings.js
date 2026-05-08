@@ -9,7 +9,7 @@ const {
   bookingConfirmSMS, bookingCancelSMS
 } = require('../backend/notificationService');
 
-const CANCEL_HOURS = 0.5;
+const CANCEL_HOURS = 24;
 const PENALTY_PCT  = 20;
 const REFUND_DAYS  = 7;
 

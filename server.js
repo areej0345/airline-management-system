@@ -10,8 +10,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type']
 }));
 
-app.options('*', cors());
-
 app.use(express.json());
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/airlineDB')

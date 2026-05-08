@@ -1,4 +1,4 @@
-const API_BASE = "https://airline-management-system-production-ea33.up.railway.app/api";
+const API_BASE = "http://localhost:5000/api";
 
 console.log("UPDATED API FILE WORKING 🔥");
 
@@ -16,7 +16,6 @@ async function handleResponse(res) {
 // ==================
 // FLIGHTS API
 // ==================
-
 async function getFlights() {
   try {
     const res = await fetch(`${API_BASE}/flights`);
@@ -63,6 +62,60 @@ async function deleteFlight(id) {
     return await handleResponse(res);
   } catch (err) {
     console.error("Error deleting flight:", err);
+    return { error: true, message: err.message };
+  }
+}
+
+// ==================
+// PASSENGERS API
+// ==================
+async function getPassengers() {
+  try {
+    const res = await fetch(`${API_BASE}/passengers`);
+    return await handleResponse(res);
+  } catch (err) {
+    console.error("Error fetching passengers:", err);
+    return [];
+  }
+}
+
+async function addPassenger(data) {
+  try {
+    const res = await fetch(`${API_BASE}/passengers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.error("Error adding passenger:", err);
+    return { error: true, message: err.message };
+  }
+}
+
+// ==================
+// BOOKINGS API
+// ==================
+async function getBookings() {
+  try {
+    const res = await fetch(`${API_BASE}/bookings`);
+    return await handleResponse(res);
+  } catch (err) {
+    console.error("Error fetching bookings:", err);
+    return [];
+  }
+}
+
+async function addBooking(data) {
+  try {
+    const res = await fetch(`${API_BASE}/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return await handleResponse(res);
+  } catch (err) {
+    console.error("Error adding booking:", err);
     return { error: true, message: err.message };
   }
 }
