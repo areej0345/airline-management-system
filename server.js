@@ -12,6 +12,8 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
+app.use(cors(corsOptions));
+app.options(/(.*)/, cors(corsOptions)); // ye line add karo
 
 app.use(express.json());
 // MongoDB Connection
