@@ -4,18 +4,10 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-const corsOptions = {
-  origin: '*',
-  methods: ['GET','POST','PUT','DELETE'],
-  allowedHeaders: ['Content-Type'],
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
-app.options(/.*/, cors(corsOptions));
-app.use(cors(corsOptions));
-app.options(/(.*)/, cors(corsOptions)); // ye line add karo
 
+app.use(cors());
 app.use(express.json());
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/airlineDB')
   .then(() => {
