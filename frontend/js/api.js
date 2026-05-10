@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:5000/api";
+const BASE_URL = 'https://airline-management-system-xx2z.onrender.com/api';
 
 console.log("UPDATED API FILE WORKING 🔥");
 
