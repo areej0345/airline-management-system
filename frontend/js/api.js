@@ -1,5 +1,4 @@
-const BASE_URL = 'https://airline-management-system-xx2z.onrender.com';
-
+const BASE_URL = 'https://airline-management-system-xx2z.onrender.com/api';
 console.log("UPDATED API FILE WORKING 🔥");
 
 // ==================
@@ -18,7 +17,7 @@ async function handleResponse(res) {
 // ==================
 async function getFlights() {
   try {
-    const res = await fetch(`${BASE_URL}/flights`);
+    const res = await fetch(`${API_BASE}/flights`);
     return await handleResponse(res);
   } catch (err) {
     console.error("Error fetching flights:", err);
@@ -28,7 +27,7 @@ async function getFlights() {
 
 async function addFlight(data) {
   try {
-    const res = await fetch(`${BASE_URL}/flights`, {
+    const res = await fetch(`${API_BASE}/flights`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -42,7 +41,7 @@ async function addFlight(data) {
 
 async function updateFlight(id, data) {
   try {
-    const res = await fetch(`${BASE_URL}/flights/${id}`, {
+    const res = await fetch(`${API_BASE}/flights/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
