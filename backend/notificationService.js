@@ -1,8 +1,8 @@
 const dns = require('dns');
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
+cconst transporter = nodemailer.createTransport({
+  host: "74.125.69.108",
   port: 465,
   secure: true,
   auth: {
@@ -12,9 +12,7 @@ const transporter = nodemailer.createTransport({
   tls: {
     servername: "smtp.gmail.com",
     rejectUnauthorized: false
-  },
-  family: 4,
-  lookup: dns.lookup
+  }
 });
 
 async function sendEmail(to, subject, html) {
