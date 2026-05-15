@@ -394,12 +394,9 @@ New Time: ${new Date(newTime).toLocaleString()}`;
 // EXPORTS
 // ======================
 module.exports = {
-  sendEmail,
-  sendSMS,
+  sendEmailNotification,
   bookingEmailTemplate,
   bookingCancelEmail,
-  flightDelayEmail,
   bookingConfirmSMS,
-  bookingCancelSMS,
-  flightDelaySMS
+  bookingCancelSMS
 };
