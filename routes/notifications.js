@@ -7,7 +7,6 @@ const {
   bookingConfirmEmail,
   flightDelayEmail
 } = require('../backend/notificationService');
-
 // Send Booking Confirmation
 router.post('/booking-confirm', async (req, res) => {
   try {
@@ -140,4 +139,13 @@ router.post('/flight-status', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = {
+  sendEmail,
+  sendSMS,
+  bookingConfirmEmail,
+  bookingCancelEmail,
+  flightDelayEmail,
+  bookingConfirmSMS,
+  bookingCancelSMS,
+  flightDelaySMS
+};
