@@ -1,36 +1,48 @@
 const express = require('express');
 const router = express.Router();
+
 const {
-  sendEmailNotification,
-  sendSMSNotification,
-  bookingEmailTemplate,
-  flightStatusEmailTemplate
+  sendEmail,
+  sendSMS,
+  bookingConfirmEmail,
+  flightDelayEmail
 } = require('../backend/notificationService');
 
 // Send Booking Confirmation
 router.post('/booking-confirm', async (req, res) => {
   try {
     const {
-      email, phone, passengerName,
-      bookingRef, flightNo,
-      origin, destination, fare
+      email,
+      phone,
+      passengerName,
+      bookingRef,
+      flightNo,
+      origin,
+      destination,
+      fare,
+      seatNo,
+      seatClass,
+      departureTime
     } = req.body;
 
     // Send Email
-    const emailResult = await sendEmailNotification(
+    const emailResult = await sendEmail(
       email,
       '✈️ Booking Confirmed — ' + bookingRef,
-      bookingEmailTemplate(
+      bookingConfirmEmail(
         passengerName,
         bookingRef,
         flightNo,
         origin,
         destination,
-        fare
+        fare,
+        seatNo || 'N/A',
+        seatClass || 'Economy',
+        departureTime || new Date()
       )
     );
 
-    // Send SMS only if Twilio available
+    // Send SMS only if configured
     let smsResult = { success: false, message: 'SMS disabled' };
 
     if (
@@ -45,7 +57,7 @@ router.post('/booking-confirm', async (req, res) => {
         `Route: ${origin} → ${destination}\n` +
         `Fare: Rs ${fare}`;
 
-      smsResult = await sendSMSNotification(phone, smsMessage);
+      smsResult = await sendSMS(phone, smsMessage);
     }
 
     res.json({
@@ -53,8 +65,8 @@ router.post('/booking-confirm', async (req, res) => {
       email: emailResult,
       sms: smsResult,
       message: emailResult.success
-        ? 'Email sent successfully!'
-        : 'Email failed'
+        ? 'Booking notification sent successfully!'
+        : 'Booking email failed'
     });
 
   } catch (err) {
@@ -69,25 +81,34 @@ router.post('/booking-confirm', async (req, res) => {
 router.post('/flight-status', async (req, res) => {
   try {
     const {
-      email, phone, passengerName,
-      flightNo, status,
-      origin, destination
+      email,
+      phone,
+      passengerName,
+      flightNo,
+      status,
+      origin,
+      destination,
+      originalTime,
+      newTime,
+      reason
     } = req.body;
 
     // Send Email
-    const emailResult = await sendEmailNotification(
+    const emailResult = await sendEmail(
       email,
       `⚠️ Flight ${flightNo} — ${status}`,
-      flightStatusEmailTemplate(
+      flightDelayEmail(
         passengerName,
         flightNo,
-        status,
         origin,
-        destination
+        destination,
+        originalTime || new Date(),
+        newTime || new Date(),
+        reason || status
       )
     );
 
-    // Send SMS only if Twilio available
+    // Send SMS only if configured
     let smsResult = { success: false, message: 'SMS disabled' };
 
     if (
@@ -99,7 +120,7 @@ router.post('/flight-status', async (req, res) => {
         `✈️ AirLine MS: Flight ${flightNo} is now ${status}.\n` +
         `Route: ${origin} → ${destination}`;
 
-      smsResult = await sendSMSNotification(phone, smsMessage);
+      smsResult = await sendSMS(phone, smsMessage);
     }
 
     res.json({
@@ -107,7 +128,7 @@ router.post('/flight-status', async (req, res) => {
       email: emailResult,
       sms: smsResult,
       message: emailResult.success
-        ? 'Flight status email sent!'
+        ? 'Flight status notification sent!'
         : 'Flight status email failed'
     });
 
