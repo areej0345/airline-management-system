@@ -81,7 +81,7 @@ async function sendSMS(to, message) {
 // ======================
 // BOOKING CONFIRM EMAIL
 // ======================
-function bookingConfirmEmail(
+function bookingEmailTemplate(
   name,
   ref,
   flightNo,
@@ -194,7 +194,7 @@ New Time: ${new Date(newTime).toLocaleString()}`;
 module.exports = {
   sendEmail,
   sendSMS,
-  bookingConfirmEmail,
+  bookingEmailTemplate,
   bookingCancelEmail,
   flightDelayEmail,
   bookingConfirmSMS,
@@ -283,7 +283,7 @@ async function sendSMS(to, message) {
 // ======================
 // BOOKING CONFIRM EMAIL
 // ======================
-function bookingConfirmEmail(
+function bookingEmailTemplate(
   name,
   ref,
   flightNo,
@@ -396,7 +396,7 @@ New Time: ${new Date(newTime).toLocaleString()}`;
 module.exports = {
   sendEmail,
   sendSMS,
-  bookingConfirmEmail,
+  bookingEmailTemplate,
   bookingCancelEmail,
   flightDelayEmail,
   bookingConfirmSMS,

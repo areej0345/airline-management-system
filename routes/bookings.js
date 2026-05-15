@@ -5,7 +5,7 @@ const Flight = require('../models/Flight');
 const Passenger = require('../models/Passenger');
 const {
   sendEmail, sendSMS,
-  bookingConfirmEmail, bookingCancelEmail,
+  bookingEmailTemplate, bookingCancelEmail,
   bookingConfirmSMS, bookingCancelSMS
 } = require('../backend/notificationService');
 
@@ -52,7 +52,7 @@ router.post('/', async (req, res) => {
         await sendEmail(
           passenger.email,
           `✈️ Booking Confirmed — ${bookingReference}`,
-          bookingConfirmEmail(passenger.name, bookingReference, flight.flightNumber, flight.origin, flight.destination, req.body.fare, req.body.seatNumber, req.body.seatClass, flight.departureTime)
+          bookingEmailTemplate(passenger.name, bookingReference, flight.flightNumber, flight.origin, flight.destination, req.body.fare, req.body.seatNumber, req.body.seatClass, flight.departureTime)
         );
       }
       if (passenger.phone) {
