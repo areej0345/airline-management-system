@@ -3,11 +3,7 @@ const router = express.Router();
 const Booking = require('../models/Booking');
 const Flight = require('../models/Flight');
 const Passenger = require('../models/Passenger');
-const {
-  sendEmail, sendSMS,
-  bookingEmailTemplate, bookingCancelEmail,
-  bookingConfirmSMS, bookingCancelSMS
-} = require('../backend/notificationService');
+const { sendEmailNotification, bookingEmailTemplate, bookingCancelEmail } = require('../backend/notificationService');
 
 const CANCEL_HOURS = 24;
 const PENALTY_PCT  = 20;
@@ -49,14 +45,25 @@ router.post('/', async (req, res) => {
     const passenger = await Passenger.findById(req.body.passenger);
     if (passenger) {
       if (passenger.email) {
-        await sendEmail(
-          passenger.email,
-          `✈️ Booking Confirmed — ${bookingReference}`,
-          bookingEmailTemplate(passenger.name, bookingReference, flight.flightNumber, flight.origin, flight.destination, req.body.fare, req.body.seatNumber, req.body.seatClass, flight.departureTime)
-        );
+        await sendEmailNotification(
+  passenger.email,
+  `✈️ Booking Confirmed - ${bookingReference}`,
+  bookingEmailTemplate(
+    passenger.name,
+    bookingReference,
+    flight.flightNumber,
+    flight.origin,
+    flight.destination,
+    req.body.fare
+  )
+);
       }
       if (passenger.phone) {
-        await sendSMS(passenger.phone, bookingConfirmSMS(passenger.name, bookingReference, flight.flightNumber, flight.origin, flight.destination));
+        await sendEmailNotification(
+  passenger.phone,
+  `✈️ Booking Confirmed - ${bookingReference}`,
+  bookingConfirmSMS(passenger.name, bookingReference, flight.flightNumber, flight.origin, flight.destination)
+);
       }
     }
 
