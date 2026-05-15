@@ -1,13 +1,20 @@
 const express = require('express');
 const router = express.Router();
 
+// ✅ CORRECT IMPORTS
 const {
   sendEmail,
   sendSMS,
   bookingConfirmEmail,
-  flightDelayEmail
+  flightDelayEmail,
+  bookingConfirmSMS,
+  flightDelaySMS
 } = require('../backend/notificationService');
-// Send Booking Confirmation
+
+
+// ==============================
+// BOOKING CONFIRMATION ROUTE
+// ==============================
 router.post('/booking-confirm', async (req, res) => {
   try {
     const {
@@ -19,15 +26,15 @@ router.post('/booking-confirm', async (req, res) => {
       origin,
       destination,
       fare,
-      seatNo,
+      seatNumber,
       seatClass,
       departureTime
     } = req.body;
 
-    // Send Email
+    // ✅ EMAIL
     const emailResult = await sendEmail(
       email,
-      '✈️ Booking Confirmed — ' + bookingRef,
+      `✈️ Booking Confirmed — ${bookingRef}`,
       bookingConfirmEmail(
         passengerName,
         bookingRef,
@@ -35,40 +42,33 @@ router.post('/booking-confirm', async (req, res) => {
         origin,
         destination,
         fare,
-        seatNo || 'N/A',
-        seatClass || 'Economy',
-        departureTime || new Date()
+        seatNumber,
+        seatClass,
+        departureTime
       )
     );
 
-    // Send SMS only if configured
-    let smsResult = { success: false, message: 'SMS disabled' };
-
-    if (
-      process.env.TWILIO_ACCOUNT_SID &&
-      process.env.TWILIO_AUTH_TOKEN &&
-      process.env.TWILIO_PHONE
-    ) {
-      const smsMessage =
-        `✈️ AirLine MS: Booking Confirmed!\n` +
-        `Ref: ${bookingRef}\n` +
-        `Flight: ${flightNo}\n` +
-        `Route: ${origin} → ${destination}\n` +
-        `Fare: Rs ${fare}`;
-
-      smsResult = await sendSMS(phone, smsMessage);
-    }
+    // ✅ SMS
+    const smsResult = await sendSMS(
+      phone,
+      bookingConfirmSMS(
+        passengerName,
+        bookingRef,
+        flightNo,
+        origin,
+        destination
+      )
+    );
 
     res.json({
-      success: emailResult.success,
+      success: true,
       email: emailResult,
       sms: smsResult,
-      message: emailResult.success
-        ? 'Booking notification sent successfully!'
-        : 'Booking email failed'
+      message: 'Booking confirmation sent successfully!'
     });
 
   } catch (err) {
+    console.error('Booking Confirm Error:', err);
     res.status(500).json({
       success: false,
       message: err.message
@@ -76,7 +76,10 @@ router.post('/booking-confirm', async (req, res) => {
   }
 });
 
-// Send Flight Status Update
+
+// ==============================
+// FLIGHT STATUS / DELAY ROUTE
+// ==============================
 router.post('/flight-status', async (req, res) => {
   try {
     const {
@@ -84,15 +87,15 @@ router.post('/flight-status', async (req, res) => {
       phone,
       passengerName,
       flightNo,
-      status,
       origin,
       destination,
       originalTime,
       newTime,
-      reason
+      reason,
+      status
     } = req.body;
 
-    // Send Email
+    // ✅ EMAIL
     const emailResult = await sendEmail(
       email,
       `⚠️ Flight ${flightNo} — ${status}`,
@@ -101,37 +104,32 @@ router.post('/flight-status', async (req, res) => {
         flightNo,
         origin,
         destination,
-        originalTime || new Date(),
-        newTime || new Date(),
+        originalTime,
+        newTime,
         reason || status
       )
     );
 
-    // Send SMS only if configured
-    let smsResult = { success: false, message: 'SMS disabled' };
-
-    if (
-      process.env.TWILIO_ACCOUNT_SID &&
-      process.env.TWILIO_AUTH_TOKEN &&
-      process.env.TWILIO_PHONE
-    ) {
-      const smsMessage =
-        `✈️ AirLine MS: Flight ${flightNo} is now ${status}.\n` +
-        `Route: ${origin} → ${destination}`;
-
-      smsResult = await sendSMS(phone, smsMessage);
-    }
+    // ✅ SMS
+    const smsResult = await sendSMS(
+      phone,
+      flightDelaySMS(
+        flightNo,
+        origin,
+        destination,
+        newTime
+      )
+    );
 
     res.json({
-      success: emailResult.success,
+      success: true,
       email: emailResult,
       sms: smsResult,
-      message: emailResult.success
-        ? 'Flight status notification sent!'
-        : 'Flight status email failed'
+      message: 'Flight notification sent successfully!'
     });
 
   } catch (err) {
+    console.error('Flight Status Error:', err);
     res.status(500).json({
       success: false,
       message: err.message
@@ -139,13 +137,4 @@ router.post('/flight-status', async (req, res) => {
   }
 });
 
-module.exports = {
-  sendEmail,
-  sendSMS,
-  bookingConfirmEmail,
-  bookingCancelEmail,
-  flightDelayEmail,
-  bookingConfirmSMS,
-  bookingCancelSMS,
-  flightDelaySMS
-};
+module.exports = router;
