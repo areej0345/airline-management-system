@@ -3,7 +3,11 @@ const router = express.Router();
 const Booking = require('../models/Booking');
 const Flight = require('../models/Flight');
 const Passenger = require('../models/Passenger');
-const { sendEmail, sendSMS, bookingConfirmEmail, bookingCancelEmail, bookingConfirmSMS, bookingCancelSMS } = require('../backend/notificationService');
+const {
+  sendEmail, sendSMS,
+  bookingConfirmEmail, bookingCancelEmail,
+  bookingConfirmSMS, bookingCancelSMS
+} = require('../backend/notificationService');
 
 const CANCEL_HOURS = 24;
 const PENALTY_PCT  = 20;

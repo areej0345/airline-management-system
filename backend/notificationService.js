@@ -1,8 +1,8 @@
-const dns = require('dns');
 const nodemailer = require('nodemailer');
 
 // ✅ FORCE IPV4 (Render Gmail fix)
-dns.setDefaultResultOrder('ipv4first');
+// const dns = require('dns');
+// dns.setDefaultResultOrder('ipv4first');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
@@ -200,11 +200,11 @@ module.exports = {
   bookingConfirmSMS,
   bookingCancelSMS,
   flightDelaySMS
-};const dns = require('dns');
+};
 const nodemailer = require('nodemailer');
 
 // ✅ FORCE IPV4 (Render Gmail fix)
-dns.setDefaultResultOrder('ipv4first');
+// dns.setDefaultResultOrder('ipv4first');
 
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
