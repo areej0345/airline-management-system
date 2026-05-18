@@ -1,119 +1,51 @@
 const express = require('express');
 const router = express.Router();
-
 const {
-  sendEmailNotification,
-  sendSMSNotification,
-  bookingEmailTemplate,
-  flightStatusEmailTemplate
+  sendEmail,
+  sendSMS,
+  bookingConfirmEmail,
+  bookingCancelEmail,
+  flightDelayEmail,
+  bookingConfirmSMS,
+  bookingCancelSMS,
+  flightDelaySMS
 } = require('../backend/notificationService');
 
-
-// =============================
-// BOOKING CONFIRMATION ROUTE
-// =============================
 router.post('/booking-confirm', async (req, res) => {
   try {
-    const {
-      email,
-      phone,
-      passengerName,
-      bookingRef,
-      flightNo,
-      origin,
-      destination,
-      fare
-    } = req.body;
+    const { email, phone, passengerName, bookingRef, flightNo, origin, destination, fare, seatNumber, seatClass, departureTime } = req.body;
 
-    // Send Email
-    const emailResult = await sendEmailNotification(
-      email,
-      `✈️ Booking Confirmed — ${bookingRef}`,
-      bookingEmailTemplate(
-        passengerName,
-        bookingRef,
-        flightNo,
-        origin,
-        destination,
-        fare
-      )
-    );
+    if (email) {
+      await sendEmail(email, `✈️ Booking Confirmed — ${bookingRef}`,
+        bookingConfirmEmail(passengerName, bookingRef, flightNo, origin, destination, fare, seatNumber, seatClass, departureTime));
+    }
 
-    // Send SMS
-    const smsMessage =
-      `✈️ AirLine MS: Booking Confirmed!\n` +
-      `Ref: ${bookingRef}\n` +
-      `Flight: ${flightNo}\n` +
-      `Route: ${origin} → ${destination}\n` +
-      `Fare: Rs ${fare}`;
+    if (phone) {
+      await sendSMS(phone, bookingConfirmSMS(passengerName, bookingRef, flightNo, origin, destination));
+    }
 
-    const smsResult = await sendSMSNotification(phone, smsMessage);
-
-    res.json({
-      success: true,
-      email: emailResult,
-      sms: smsResult,
-      message: 'Booking notifications sent successfully!'
-    });
-
+    res.json({ success: true, message: 'Notifications sent!' });
   } catch (err) {
-    console.error('❌ Booking Notification Error:', err.message);
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
+    res.status(500).json({ message: err.message });
   }
 });
 
-
-// =============================
-// FLIGHT STATUS UPDATE ROUTE
-// =============================
 router.post('/flight-status', async (req, res) => {
   try {
-    const {
-      email,
-      phone,
-      passengerName,
-      flightNo,
-      status,
-      origin,
-      destination
-    } = req.body;
+    const { email, phone, passengerName, flightNo, status, origin, destination, newTime, reason } = req.body;
 
-    // Send Email
-    const emailResult = await sendEmailNotification(
-      email,
-      `⚠️ Flight ${flightNo} — ${status}`,
-      flightStatusEmailTemplate(
-        passengerName,
-        flightNo,
-        status,
-        origin,
-        destination
-      )
-    );
+    if (email) {
+      await sendEmail(email, `⚠️ Flight ${flightNo} — ${status}`,
+        flightDelayEmail(passengerName, flightNo, origin, destination, new Date(), newTime, reason));
+    }
 
-    // Send SMS
-    const smsMessage =
-      `✈️ AirLine MS: Flight ${flightNo} is now ${status}.\n` +
-      `Route: ${origin} → ${destination}`;
+    if (phone) {
+      await sendSMS(phone, flightDelaySMS(flightNo, origin, destination, newTime));
+    }
 
-    const smsResult = await sendSMSNotification(phone, smsMessage);
-
-    res.json({
-      success: true,
-      email: emailResult,
-      sms: smsResult,
-      message: 'Flight status notifications sent successfully!'
-    });
-
+    res.json({ success: true });
   } catch (err) {
-    console.error('❌ Flight Status Notification Error:', err.message);
-    res.status(500).json({
-      success: false,
-      message: err.message
-    });
+    res.status(500).json({ message: err.message });
   }
 });
 
