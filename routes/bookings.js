@@ -9,11 +9,10 @@ const {
   bookingConfirmSMS, bookingCancelSMS
 } = require('../backend/notificationService');
 
-const CANCEL_HOURS = 24;
-const PENALTY_PCT  = 20;
-const REFUND_DAYS  = 7;
+const CANCEL_MINUTES = 30;
+const PENALTY_PCT = 20;
+const REFUND_DAYS = 7;
 
-// Get All Bookings
 router.get('/', async (req, res) => {
   try {
     const bookings = await Booking.find().populate('flight').populate('passenger');
@@ -23,7 +22,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Add New Booking
 router.post('/', async (req, res) => {
   try {
     const flight = await Flight.findById(req.body.flight);
@@ -49,18 +47,11 @@ router.post('/', async (req, res) => {
     const passenger = await Passenger.findById(req.body.passenger);
     if (passenger) {
       if (passenger.email) {
-        await sendEmailNotification(
-  passenger.email,
-  `✈️ Booking Confirmed - ${bookingReference}`,
-  bookingEmailTemplate(
-    passenger.name,
-    bookingReference,
-    flight.flightNumber,
-    flight.origin,
-    flight.destination,
-    req.body.fare
-  )
-);
+        await sendEmail(
+          passenger.email,
+          `✈️ Booking Confirmed — ${bookingReference}`,
+          bookingConfirmEmail(passenger.name, bookingReference, flight.flightNumber, flight.origin, flight.destination, req.body.fare, req.body.seatNumber, req.body.seatClass, flight.departureTime)
+        );
       }
       if (passenger.phone) {
         await sendSMS(passenger.phone, bookingConfirmSMS(passenger.name, bookingReference, flight.flightNumber, flight.origin, flight.destination));
@@ -73,7 +64,6 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get Single Booking
 router.get('/:id', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate('flight').populate('passenger');
@@ -84,46 +74,42 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Cancellation Info
 router.get('/:id/cancel-info', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate('flight').populate('passenger');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    const hoursDiff = (new Date() - new Date(booking.bookingDate || booking.createdAt)) / 3600000;
-    const isFree    = hoursDiff <= CANCEL_HOURS;
-    const penalty   = isFree ? 0 : Math.round(booking.fare * PENALTY_PCT / 100);
-    const refund    = booking.fare - penalty;
-    const deadline  = new Date(new Date(booking.bookingDate || booking.createdAt).getTime() + CANCEL_HOURS * 3600000);
+    const minutesDiff = (new Date() - new Date(booking.bookingDate || booking.createdAt)) / 60000;
+    const isFree = minutesDiff <= CANCEL_MINUTES;
+    const penalty = isFree ? 0 : Math.round(booking.fare * PENALTY_PCT / 100);
+    const refund = booking.fare - penalty;
 
     res.json({
       isFree,
-      hoursSinceBooking: Math.round(hoursDiff),
-      cancellationDeadline: deadline,
-      cancellationDeadlineHours: CANCEL_HOURS,
+      minutesSinceBooking: Math.round(minutesDiff),
+      cancellationDeadlineMinutes: CANCEL_MINUTES,
       originalFare: booking.fare,
       penalty,
       refundAmount: refund,
       refundDays: REFUND_DAYS,
       message: isFree
-        ? `Free cancellation available! Deadline: ${deadline.toLocaleString()}`
-        : `Cancellation will incur 20% penalty (Rs ${penalty.toLocaleString()}). Refund: Rs ${refund.toLocaleString()} in ${REFUND_DAYS} days.`
+        ? `Free cancellation available!`
+        : `20% penalty applies. Refund: Rs ${refund.toLocaleString()} in ${REFUND_DAYS} days.`
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// Cancel Booking
 router.delete('/:id', async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate('flight').populate('passenger');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
 
-    const hoursDiff = (new Date() - new Date(booking.bookingDate || booking.createdAt)) / 3600000;
-    const isFree    = hoursDiff <= CANCEL_HOURS;
-    const penalty   = isFree ? 0 : Math.round(booking.fare * PENALTY_PCT / 100);
-    const refund    = booking.fare - penalty;
+    const minutesDiff = (new Date() - new Date(booking.bookingDate || booking.createdAt)) / 60000;
+    const isFree = minutesDiff <= CANCEL_MINUTES;
+    const penalty = isFree ? 0 : Math.round(booking.fare * PENALTY_PCT / 100);
+    const refund = booking.fare - penalty;
 
     const flight = await Flight.findById(booking.flight);
     if (flight) { flight.availableSeats += 1; await flight.save(); }
@@ -145,14 +131,7 @@ router.delete('/:id', async (req, res) => {
     }
 
     await Booking.findByIdAndDelete(req.params.id);
-
-    res.json({
-      message: 'Booking cancelled successfully',
-      isFree,
-      penalty,
-      refundAmount: refund,
-      refundDays: REFUND_DAYS
-    });
+    res.json({ message: 'Booking cancelled', isFree, penalty, refundAmount: refund, refundDays: REFUND_DAYS });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
