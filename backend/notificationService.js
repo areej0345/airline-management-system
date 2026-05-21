@@ -12,12 +12,28 @@ const transporter = nodemailer.createTransport({
 
 async function sendEmail(to, subject, html) {
   try {
-    await transporter.sendMail({
-     from: `✈️ AirLine MS <${process.env.BREVO_USER}>`,
-      to, subject, html
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': process.env.BREVO_API_KEY
+      },
+      body: JSON.stringify({
+        sender: { name: 'AirLine MS', email: process.env.BREVO_USER },
+        to: [{ email: to }],
+        subject: subject,
+        htmlContent: html
+      })
     });
-    console.log(`✅ Email sent to ${to}`);
-    return { success: true };
+
+    if (response.ok) {
+      console.log(`✅ Email sent to ${to}`);
+      return { success: true };
+    } else {
+      const err = await response.json();
+      console.log(`❌ Email error: ${JSON.stringify(err)}`);
+      return { success: false, message: JSON.stringify(err) };
+    }
   } catch (err) {
     console.log(`❌ Email error: ${err.message}`);
     return { success: false, message: err.message };
