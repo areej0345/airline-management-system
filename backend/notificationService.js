@@ -16,7 +16,7 @@ async function sendEmail(to, subject, html) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': process.env.BREVO_API_KEY
+       'api-key': process.env.BREVO_PASS
       },
       body: JSON.stringify({
         sender: { name: 'AirLine MS', email: process.env.BREVO_USER },
