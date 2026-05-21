@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 async function sendEmail(to, subject, html) {
   try {
     await transporter.sendMail({
-      from: `✈️ AirLine MS <${process.env.EMAIL_USER}>`,
+     from: `✈️ AirLine MS <${process.env.BREVO_USER}>`,
       to, subject, html
     });
     console.log(`✅ Email sent to ${to}`);
